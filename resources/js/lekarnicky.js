@@ -356,37 +356,72 @@ export function lekarnicky() {
     }
 
     // Načtení úrazů
-    function loadUrazy() {
-        // Inicializace DataTable pro úrazy
+    async function loadUrazy() {
+        const tbody = document.getElementById('urazy-tbody');
+        if (!tbody) return;
+
+        // Zrušit starou instanci DataTables (pokud existuje)
         if ($.fn.DataTable && $.fn.DataTable.isDataTable('#urazyTable')) {
             $('#urazyTable').DataTable().destroy();
         }
 
-        if ($.fn.DataTable) {
-            const tableConfig = {
-                responsive: true,
-                pageLength: 25
-            };
+        try {
+            const urazy = await apiCall('/api/lekarnicke/urazy');
+            appData.urazy = urazy || [];
 
-            // Zkusit přidat český překlad
-            if (typeof $ !== 'undefined') {
-                $.ajax({
-                    url: '/assets/cs.json',
-                    async: false,
-                    success: function() {
-                        tableConfig.language = { url: '/assets/cs.json' };
-                    },
-                    error: function() {
-                        console.log('Český překlad pro DataTables není k dispozici');
-                    }
-                });
+            if (!urazy || urazy.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Žádné záznamy úrazů</td></tr>';
+            } else {
+                tbody.innerHTML = urazy.map(u => {
+                    const datum = u.datum_cas_urazu
+                        ? new Date(u.datum_cas_urazu).toLocaleString('cs-CZ')
+                        : '—';
+                    const zamestnanec = u.zamestnanec
+                        ? `${u.zamestnanec.prijmeni} ${u.zamestnanec.jmeno}`
+                        : '—';
+                    const lekarnicka = u.lekarnicky
+                        ? u.lekarnicky.nazev
+                        : '—';
+                    const zavaznostBadge = {
+                        'lehky': '<span class="badge bg-success">Lehký</span>',
+                        'stredni': '<span class="badge bg-warning text-dark">Střední</span>',
+                        'tezky': '<span class="badge bg-danger">Těžký</span>'
+                    }[u.zavaznost] || u.zavaznost || '—';
+
+                    return `
+                        <tr>
+                            <td>${datum}</td>
+                            <td>${zamestnanec}</td>
+                            <td>${u.misto_urazu || '—'}</td>
+                            <td>${zavaznostBadge}</td>
+                            <td>${lekarnicka}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        onclick="deleteUraz(${u.id})"
+                                        title="Smazat záznam">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
             }
 
-            $('#urazyTable').DataTable(tableConfig);
-        }
+            // Inicializace DataTable
+            if ($.fn.DataTable) {
+                const tableConfig = {
+                    responsive: true,
+                    pageLength: 25,
+                    order: [[0, 'desc']],
+                    language: { url: '/assets/cs.json' }
+                };
+                $('#urazyTable').DataTable(tableConfig);
+            }
 
-        console.log('Loading urazy...');
-        // TODO: Implementovat načtení úrazů z API
+        } catch (error) {
+            console.error('Chyba při načítání úrazů:', error);
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Chyba při načítání záznamů</td></tr>';
+        }
     }
 
     // Nastavení výkazů
@@ -402,9 +437,6 @@ export function lekarnicky() {
     }
 
     // ========== OPRAVENÉ MODAL FUNKCE ==========
-
-    // Zavření modalu - jQuery způsob (kompatibilní s vaším kódem)
-
 
     // Zobrazení notifikace (stejný jako váš stávající systém)
     function showNotification(message, type = 'info') {
@@ -718,6 +750,22 @@ window.editMaterial = async function(id) {
             }
         } catch (error) {
             console.error('Chyba při mazání materiálu:', error);
+        }
+    };
+    window.deleteUraz = async function(id) {
+        if (!confirm('Opravdu chcete smazat tento záznam úrazu?')) return;
+
+        try {
+            const result = await apiCall(`/api/lekarnicke/urazy/${id}`, {
+                method: 'DELETE'
+            });
+            if (result.success) {
+                showNotification(result.message || 'Záznam smazán', 'success');
+                await loadUrazy();
+                await loadDashboard(); // aktualizuj počet úrazů v dashboard statistice
+            }
+        } catch (error) {
+            console.error('Chyba při mazání úrazu:', error);
         }
     };
 

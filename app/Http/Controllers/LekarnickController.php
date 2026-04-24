@@ -174,7 +174,7 @@ class LekarnickController extends Controller
             'popis_urazu' => 'required|string',
             'misto_urazu' => 'required|string|max:255',
             'zavaznost' => 'required|in:lehky,stredni,tezky',
-            'poskytnutе_osetreni' => 'required|string',
+            'poskytnute_osetreni' => 'required|string',
             'osoba_poskytujici_pomoc' => 'required|string|max:255'
         ]);
 
@@ -184,6 +184,32 @@ class LekarnickController extends Controller
             'success' => true,
             'uraz' => $uraz->load(['zamestnanec', 'lekarnicky']),
             'message' => 'Záznam o úrazu byl vytvořen'
+        ]);
+    }
+
+    /**
+     * Seznam všech úrazů pro záznamy úrazů.
+     */
+    public function getUrazy()
+    {
+        $urazy = Uraz::with(['zamestnanec:id,jmeno,prijmeni,stredisko', 'lekarnicky:id,nazev,umisteni'])
+            ->orderBy('datum_cas_urazu', 'desc')
+            ->get();
+
+        return response()->json($urazy);
+    }
+
+    /**
+     * Smazání záznamu úrazu.
+     */
+    public function destroyUraz($id)
+    {
+        $uraz = Uraz::findOrFail($id);
+        $uraz->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Záznam úrazu byl smazán'
         ]);
     }
 

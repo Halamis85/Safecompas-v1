@@ -244,5 +244,5 @@ function employeeList() {
         console.warn('employees.js: Element s ID "employees-table" pro DataTables nebyl nalezen.');
     }
 }
-document.addEventListener("DOMContentLoaded", employeeList);
 export {employeeList};
+

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->text('popis_urazu');
             $table->string('misto_urazu');
             $table->enum('zavaznost', ['lehky', 'stredni', 'tezky']);
-            $table->text('poskytnutе_osetreni');
+            $table->text('poskytnute_osetreni');
             $table->string('osoba_poskytujici_pomoc');
             $table->boolean('prevezen_do_nemocnice')->default(false);
             $table->text('poznamky')->nullable();

@@ -11,13 +11,17 @@ class UserActivity extends Model
 
     protected $fillable = [
         'user_id',
-        'activity_type',
-        'details',
-        'timestamp'
+        'action',
+        'table_name',
+        'old_values',
+        'new_values',
+        'ip_address',
+        'user_agent',
     ];
 
     protected $casts = [
-        'timestamp' => 'datetime'
+        'old_values' => 'array',
+        'new_values' => 'array',
     ];
 
     public function user(): BelongsTo

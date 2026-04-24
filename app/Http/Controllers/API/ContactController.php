@@ -3,21 +3,21 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 
 class ContactController extends Controller
 {
     public function index(): JsonResponse
     {
-        $contacts = DB::table('contacts')->get();
+        $contacts = Contact::orderBy('type')->orderBy('name')->get();
         return response()->json($contacts);
     }
 
     public function show($id): JsonResponse
     {
-        $contact = DB::table('contacts')->find($id);
+        $contact = Contact::find($id);
 
         if (!$contact) {
             return response()->json(['error' => 'Kontakt nenalezen'], 404);
@@ -28,63 +28,59 @@ class ContactController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email',
-            'message' => 'required|string'
+        $data = $request->validate([
+            'name'      => 'required|string|max:255',
+            'email'     => 'required|email|max:255',
+            'type'      => 'required|in:supplier,customer,user',
+            'is_active' => 'sometimes|boolean',
         ]);
 
-        $id = DB::table('contacts')->insertGetId([
-            'name' => $request->name,
-            'email' => $request->email,
-            'message' => $request->message,
-            'created_at' => now(),
-            'updated_at' => now()
-        ]);
+        $contact = Contact::create($data);
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Kontakt vytvořen',
-            'id' => $id
+            'status'  => 'success',
+            'message' => 'Kontakt byl vytvořen',
+            'contact' => $contact,
         ]);
     }
 
     public function update(Request $request, $id): JsonResponse
     {
-        $request->validate([
-            'name' => 'string',
-            'email' => 'email',
-            'message' => 'string'
-        ]);
+        $contact = Contact::find($id);
 
-        $updated = DB::table('contacts')
-            ->where('id', $id)
-            ->update(array_merge(
-                $request->only(['name', 'email', 'message']),
-                ['updated_at' => now()]
-            ));
-
-        if (!$updated) {
+        if (!$contact) {
             return response()->json(['error' => 'Kontakt nenalezen'], 404);
         }
 
+        $data = $request->validate([
+            'name'      => 'sometimes|string|max:255',
+            'email'     => 'sometimes|email|max:255',
+            'type'      => 'sometimes|in:supplier,customer,user',
+            'is_active' => 'sometimes|boolean',
+        ]);
+
+        $contact->update($data);
+
         return response()->json([
-            'status' => 'success',
-            'message' => 'Kontakt aktualizován'
+            'status'  => 'success',
+            'message' => 'Kontakt byl aktualizován',
+            'contact' => $contact->fresh(),
         ]);
     }
 
     public function destroy($id): JsonResponse
     {
-        $deleted = DB::table('contacts')->where('id', $id)->delete();
+        $contact = Contact::find($id);
 
-        if (!$deleted) {
+        if (!$contact) {
             return response()->json(['error' => 'Kontakt nenalezen'], 404);
         }
 
+        $contact->delete();
+
         return response()->json([
-            'status' => 'success',
-            'message' => 'Kontakt smazán'
+            'status'  => 'success',
+            'message' => 'Kontakt byl smazán',
         ]);
     }
 }

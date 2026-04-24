@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('body-class', 'administrace')
+@section('body-class', 'users-activity')
 
 @section('content')
 <div class="container-fluid">
@@ -12,21 +12,25 @@
                 text-success pb-2"></i>Zpět</a>
         </div>
         <div class="col-4 text-center">
-            <h1>Seznam Aktivit</h1>
+            <h1>Seznam aktivit</h1>
         </div>
         <div class="col-4"></div>
     </div>
 
     <div class="m-bg-tran p-5 mb-5">
         <div class="bg-light p-2">
-            <table id="activitiesTable" class="table table-striped table-bordered ">
+            <table id="activitiesTable" class="table table-striped table-bordered">
                 <thead>
                 <tr>
+                    <th class="text-center">Datum a čas</th>
+                    <th class="text-center">Uživatel</th>
+                    <th class="text-center">Typ aktivity</th>
+                    <th class="text-center">Detaily</th>
                 </tr>
                 </thead>
+                <tbody></tbody>
             </table>
         </div>
     </div>
 </div>
 @endsection
-

@@ -19,7 +19,7 @@ class Uraz extends Model
         'popis_urazu',
         'misto_urazu',
         'zavaznost',
-        'poskytnutе_osetreni',
+        'poskytnute_osetreni',
         'osoba_poskytujici_pomoc',
         'prevezen_do_nemocnice',
         'poznamky'

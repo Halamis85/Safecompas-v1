@@ -51,8 +51,7 @@
 
                     <div class="mb-3">
                         <label class="form-label">Poskytnuté ošetření *</label>
-                        {{-- POZOR: v DB je sloupec `poskytnutе_osetreni` s cyrilským "е". --}}
-                        <textarea class="form-control" name="poskytnutе_osetreni" rows="3" required></textarea>
+                        <textarea class="form-control" name="poskytnute_osetreni" rows="3" required></textarea>
                     </div>
 
                     <div class="row">

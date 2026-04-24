@@ -82,6 +82,34 @@ if (document.body.classList.contains('lekarnicke-modul')) {
         console.error("Chyba při načítání lékárniček modulu:", error);
     });
 }
+
+// Aktivity uživatelů (users_aktivity.blade.php)
+if (document.body.classList.contains('users-activity')) {
+    import('./userActivity.js').then(module => {
+        module.userActivity();
+    }).catch(error => {
+        console.error("Chyba při načítání userActivity modulu:", error);
+    });
+}
+
+// Emailové kontakty (email_contact.blade.php)
+if (document.body.classList.contains('email-contacts')) {
+    import('./emailContact.js').then(module => {
+        module.emailContact();
+    }).catch(error => {
+        console.error("Chyba při načítání emailContact modulu:", error);
+    });
+}
+
+// Správa zaměstnanců (employee_list.blade.php i employee_add.blade.php)
+if (document.body.classList.contains('employee-list')) {
+    import('./employeeList.js').then(module => {
+        module.employeeList();
+    }).catch(error => {
+        console.error("Chyba při načítání employee-list modulu:", error);
+    });
+}
+
 if (document.body.classList.contains('permissions-admin')) {
     import('./permissions.js').then(module => {
         module.permissions();

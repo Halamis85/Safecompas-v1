@@ -108,26 +108,34 @@ class UserController extends Controller
         ]);
         }
     }
-
     public function getUserActivity(): JsonResponse
     {
         $activities = UserActivity::with('user:id,firstname,lastname')
-            ->select('timestamp', 'activity_type', 'details', 'user_id')
-            ->orderBy('timestamp', 'desc')
-            ->get()
-            ->map(function ($activity) {
-                return [
-                    'timestamp' => $activity->timestamp,
-                    'activity_type' => $activity->activity_type,
-                    'details' => $activity->details,
-                    'firstname' => $activity->user->firstname ?? '',
-                    'lastname' => $activity->user->lastname ?? ''
-                ];
-            });
+        ->select('id', 'created_at', 'action', 'table_name', 'old_values', 'new_values', 'user_id')
+        ->orderBy('created_at', 'desc')
+        ->limit(500) // pojistka proti načítání desítek tisíc řádků
+        ->get()
+        ->map(function ($activity) {
+            // Sestavíme lidsky čitelné detaily
+            $details = $activity->table_name ? "Tabulka: {$activity->table_name}" : '';
 
-        return response()->json([
-            'status' => 'success',
-            'data' => $activities
-        ]);
-    }
+            if ($activity->new_values) {
+                $keys = array_keys($activity->new_values);
+                $details .= ($details ? ' | ' : '') . 'Pole: ' . implode(', ', $keys);
+            }
+
+            return [
+                'timestamp'     => $activity->created_at,
+                'activity_type' => $activity->action,
+                'details'       => $details ?: '—',
+                'firstname'     => $activity->user->firstname ?? '',
+                'lastname'      => $activity->user->lastname ?? '',
+            ];
+        });
+
+    return response()->json([
+        'status' => 'success',
+        'data'   => $activities,
+    ]);
+}
 }

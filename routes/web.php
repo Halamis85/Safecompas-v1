@@ -101,15 +101,17 @@ Route::middleware(['custom.auth'])->group(function () {
             Route::delete('/material/{material_id}', [LekarnickController::class, 'destroyMaterial'])->where('material_id', '[0-9]+');
         });
 
-        Route::middleware(['permission:lekarnicke.urazy'])->group(function () {
+       Route::middleware(['permission:lekarnicke.urazy'])->group(function () {
             Route::get('/zamestnanci', [LekarnickController::class, 'getZamestnanci']);
+            Route::get('/urazy', [LekarnickController::class, 'getUrazy']);                                  // NOVÁ
+            Route::delete('/urazy/{id}', [LekarnickController::class, 'destroyUraz'])->where('id', '[0-9]+'); // NOVÁ
             Route::post('/urazy', [LekarnickController::class, 'storeUraz']);
             Route::post('/vydej', [LekarnickController::class, 'vydejMaterial']);
         });
 
         Route::middleware(['permission:stats.export'])->group(function () {
-        Route::get('/export-vykaz', [LekarnickController::class, 'exportVykaz']);
-    });
+            Route::get('/export-vykaz', [LekarnickController::class, 'exportVykaz']);
+        });
     });
 
     });
@@ -183,6 +185,13 @@ Route::middleware(['custom.auth'])->group(function () {
         // Nastavení systému
         Route::middleware(['permission:admin.settings'])->group(function () {
             Route::get('/email_contact', [HomeController::class, 'emailContact']);
+
+            // API pro emailové kontakty
+            Route::get('/api/contacts',            [\App\Http\Controllers\API\ContactController::class, 'index']);
+            Route::post('/api/contacts',           [\App\Http\Controllers\API\ContactController::class, 'store']);
+            Route::get('/api/contacts/{id}',       [\App\Http\Controllers\API\ContactController::class, 'show'])->where('id', '[0-9]+');
+            Route::put('/api/contacts/{id}',       [\App\Http\Controllers\API\ContactController::class, 'update'])->where('id', '[0-9]+');
+            Route::delete('/api/contacts/{id}',    [\App\Http\Controllers\API\ContactController::class, 'destroy'])->where('id', '[0-9]+');
         });
     });
 
