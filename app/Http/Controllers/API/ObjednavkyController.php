@@ -168,10 +168,10 @@ class ObjednavkyController extends Controller
 
         $signature = $request->signature;
 
+        // === Validace base64 obrázku (jako dříve) ===
         if (!preg_match('/^data:image\/(png|jpeg);base64,/', $signature)) {
             return response()->json(['error' => 'Neplatný formát podpisu.'], 400);
         }
-
         $parts = explode(',', $signature, 2);
         if (count($parts) !== 2) {
             return response()->json(['error' => 'Neplatný formát podpisu.'], 400);
@@ -179,7 +179,6 @@ class ObjednavkyController extends Controller
 
         $encodedData = str_replace(' ', '+', $parts[1]);
         $decoded = base64_decode($encodedData, true);
-
         if ($decoded === false) {
             return response()->json(['error' => 'Neplatná data podpisu (base64).'], 400);
         }
@@ -193,15 +192,14 @@ class ObjednavkyController extends Controller
         if ($imageInfo === false) {
             return response()->json(['error' => 'Neplatná data obrázku.'], 400);
         }
-
         [$width, $height] = $imageInfo;
 
         if ($width > self::MAX_SIGNATURE_WIDTH || $height > self::MAX_SIGNATURE_HEIGHT) {
             return response()->json([
-                'error' => "Podpis je příliš velký. Maximální rozměry: " . self::MAX_SIGNATURE_WIDTH . "×" . self::MAX_SIGNATURE_HEIGHT . " px.",
+                'error' => 'Podpis je příliš velký. Maximální rozměry: '
+                    . self::MAX_SIGNATURE_WIDTH . 'x' . self::MAX_SIGNATURE_HEIGHT . ' px.',
             ], 400);
         }
-
         if ($width < 10 || $height < 10) {
             return response()->json(['error' => 'Podpis je příliš malý.'], 400);
         }
@@ -212,52 +210,50 @@ class ObjednavkyController extends Controller
         }
         imagedestroy($imageResource);
 
-        $date = now()->format('Ymd');
-        $nextIndex = DB::table('objednavky')
-                ->whereDate('datum_vydani', now())
-                ->count() + 1;
+        // === FIX K-06 + L-08: UUID místo sekvenčního čísla, PRIVATE disk ===
+        $filename = \Illuminate\Support\Str::uuid()->toString() . '.png';
 
-        $filename = sprintf("podpis_%s_%03d.png", $date, $nextIndex);
-        $storagePath = "signatures/{$filename}";
-
-        Storage::disk('public')->put($storagePath, $decoded);
+        // POZOR: 'local' disk = storage/app/private/. NENÍ veřejně přístupný.
+        Storage::disk('local')
+            ->put('signatures/' . $filename, $decoded);
 
         DB::beginTransaction();
         try {
             $updated = DB::table('objednavky')
-                ->where('id', $request->order_id)
-                ->where('status', '!=', 'vydano')
-                ->update([
-                    'podpis_path'   => $filename,
-                    'datum_vydani'  => now(),
-                    'status'        => 'vydano',
-                ]);
-
-            if ($updated === 0) {
-                DB::rollBack();
-                Storage::disk('public')->delete($storagePath);
-                return response()->json(['error' => 'Objednávka nebyla nalezena nebo již byla vydána.'], 400);
-            }
-
-            DB::commit();
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Podpis úspěšně uložen',
-                'path'    => $filename,
+            ->where('id', $request->order_id)
+            ->where('status', '!=', 'vydano')
+            ->update([
+                'podpis_path'  => $filename,
+                'datum_vydani' => now(),
+                'status'       => 'vydano',
             ]);
 
-        } catch (\Exception $e) {
+        if ($updated === 0) {
             DB::rollBack();
-            Storage::disk('public')->delete($storagePath);
-            Log::error('Vydat order error: ' . $e->getMessage());
-
+            Storage::disk('local')->delete('signatures/' . $filename);
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Chyba při ukládání podpisu.',
-            ], 500);
+                'error' => 'Objednávka nebyla nalezena nebo již byla vydána.',
+            ], 400);
         }
+
+        DB::commit();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Podpis úspěšně uložen',
+            'path'    => $filename,
+        ]);
+    } catch (\Exception $e) {
+        DB::rollBack();
+        Storage::disk('local')->delete('signatures/' . $filename);
+        Log::error('Vydat order error: ' . $e->getMessage());
+
+        return response()->json([
+            'status'  => 'error',
+            'message' => 'Chyba při ukládání podpisu.',
+        ], 500);
     }
+}
 
     public function getLastInfo(Request $request): JsonResponse
     {

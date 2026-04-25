@@ -1,4 +1,3 @@
-<!-- resources/views/lekarnicky/index.blade.php - OPRAVENO -->
 @extends('layouts.app')
 
 @section('body-class', 'lekarnicke-modul')

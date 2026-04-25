@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use App\Models\User;
+use Illuminate\Support\Facades\Password;
+use Illuminate\Validation\Rules\Password as PasswordRule;
+use App\Notifications\PasswordResetLink;
 
 class AuthController extends Controller
 {
@@ -21,7 +24,7 @@ class AuthController extends Controller
     /**
      * Délka zámku v sekundách po vyčerpání pokusů.
      */
-    private const LOCKOUT_SECONDS = 60;
+    private const LOCKOUT_SECONDS = 900;
 
     /**
      * Zobrazení loginu.
@@ -191,4 +194,72 @@ class AuthController extends Controller
     {
         return Str::lower($request->input('username', '')) . '|' . $request->ip();
     }
+
+    public function showForgot()
+    {
+        return view('auth.forgot');
+    }
+
+    public function sendResetLink(Request $request)
+    {
+        $request->validate(['email' => 'required|email']);
+
+    // Vždy vrátíme stejnou zprávu - žádné enumeration
+    $genericMessage = 'Pokud zadaný e-mail patří aktivnímu účtu, byl odeslán odkaz pro reset hesla.';
+
+    $user = User::where('email', $request->email)->where('is_active', true)->first();
+
+    if ($user) {
+        $token = Str::random(64);
+
+        \DB::table('password_reset_tokens')->updateOrInsert(
+            ['email' => $user->email],
+            ['email' => $user->email, 'token' => Hash::make($token), 'created_at' => now()]
+        );
+
+        try {
+            $user->notify(new PasswordResetLink($token, $user->email));
+        } catch (\Exception $e) {
+            Log::error('Reset email failed', ['error' => $e->getMessage()]);
+        }
+    } else {
+        Log::info('Password reset requested for unknown/inactive email', ['email' => $request->email, 'ip' => $request->ip()]);
+    }
+
+    return back()->with('status', $genericMessage);
+}
+
+    public function showReset($token, Request $request)
+    {
+        return view('auth.reset', ['token' => $token, 'email' => $request->query('email')]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+    $request->validate([
+        'token'    => 'required|string',
+        'email'    => 'required|email',
+        'password' => ['required', 'confirmed', PasswordRule::min(12)->mixedCase()->numbers()->symbols()],
+    ]);
+
+    $record = \DB::table('password_reset_tokens')->where('email', $request->email)->first();
+    if (!$record || !Hash::check($request->token, $record->token)) {
+        return back()->withErrors(['email' => 'Neplatný nebo expirovaný odkaz.']);
+    }
+
+    if (now()->diffInMinutes($record->created_at) > 60) {
+        return back()->withErrors(['email' => 'Odkaz vypršel.']);
+    }
+
+    $user = User::where('email', $request->email)->where('is_active', true)->first();
+    if (!$user) {
+        return back()->withErrors(['email' => 'Účet neexistuje nebo je neaktivní.']);
+    }
+
+    $user->update(['password' => Hash::make($request->password)]);
+    \DB::table('password_reset_tokens')->where('email', $request->email)->delete();
+
+    return redirect('/login')->with('status', 'Heslo bylo úspěšně změněno. Můžete se přihlásit.');
+    }
+
 }

@@ -5,7 +5,7 @@
  function menuoopp() {
 
     const ordersContainer = document.getElementById('orders-container');
-    const cekaCountElem = document.getElementById('ceka-coumt');
+    const cekaCountElem = document.getElementById('ceka-count');
     const objedCountElem = document.getElementById('obje-count');
     const displayDateFullElement = document.getElementById('display-date-full');
     const holidayFoundSection = document.getElementById('holiday-found-section');
