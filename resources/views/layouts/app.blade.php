@@ -13,6 +13,7 @@
     <meta name="author" content="Lukáš Halamka for Safecompas">
     <title>@yield('title', 'Safecompas')</title>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body id="app-body" class="d-flex flex-column vh-100 @yield('body-class')" data-page="">
 <header class="navbar navbar-expand-lg border-bottom sticky-top">

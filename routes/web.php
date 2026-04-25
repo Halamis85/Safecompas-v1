@@ -45,7 +45,7 @@ Route::middleware(['custom.auth'])->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware(['permission:oopp.view'])->group(function () {
-        Route::get('/prehled', [HomeController::class, 'prehlOders'])->name('prehlobj');
+        Route::get('/prehled', [HomeController::class, 'prehlOrders'])->name('prehlobj');
         Route::get('/cards', [HomeController::class, 'cardsEmploy'])->name('cards');
 
         // API pro OOPP přehled
@@ -82,6 +82,7 @@ Route::middleware(['custom.auth'])->group(function () {
 
         Route::prefix('api/lekarnicke')->group(function () {
     Route::get('/dashboard', [LekarnickController::class, 'dashboard']);
+    Route::get('/stats', [LekarnickController::class, 'stats']);
 
     Route::get('/{id}', [LekarnickController::class, 'show'])->where('id', '[0-9]+')->middleware(['lekarnick.access:view']);
 

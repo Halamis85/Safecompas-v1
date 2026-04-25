@@ -48,6 +48,57 @@ class LekarnickController extends Controller
         ]);
     }
 
+    /**
+     * Data pro grafy v analytickém dashboardu
+     */
+    public function stats()
+    {
+        // 1. Trendy úrazů za posledních 6 měsíců
+        $injuriesTrend = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = now()->subMonths($i);
+            $count = Uraz::whereYear('datum_cas_urazu', $date->year)
+                         ->whereMonth('datum_cas_urazu', $date->month)
+                         ->count();
+            
+            $injuriesTrend[] = [
+                'label' => $date->translatedFormat('F'),
+                'count' => $count
+            ];
+        }
+
+        // 2. Stav materiálu (OK vs Nízký vs Expirovaný)
+        $materials = LekarnickeMaterial::all();
+        $materialStats = [
+            'ok' => 0,
+            'low' => 0,
+            'expired' => 0
+        ];
+
+        foreach ($materials as $m) {
+            if ($m->datum_expirace && Carbon::parse($m->datum_expirace)->isPast()) {
+                $materialStats['expired']++;
+            } elseif ($m->aktualni_pocet <= $m->minimalni_pocet) {
+                $materialStats['low']++;
+            } else {
+                $materialStats['ok']++;
+            }
+        }
+
+        // 3. Status lékárniček (Kontroly)
+        $lekarnicky = Lekarnicky::all();
+        $inspectionStats = [
+            'done' => $lekarnicky->where('je_potreba_kontrola', false)->count(),
+            'pending' => $lekarnicky->where('je_potreba_kontrola', true)->count()
+        ];
+
+        return response()->json([
+            'injuries' => $injuriesTrend,
+            'materials' => $materialStats,
+            'inspections' => $inspectionStats
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([

@@ -6,8 +6,8 @@
     <div class="row justify-content-center mb-4 mt-5">
         <div class="col-4 col-sm-12 col-md-8 col-lg-2 d-flex justify-content-center align-items-center mb-4">
             <a href="/email_contact" class="card-circle-icons animated-circle-icons d-flex flex-column
-                justify-content-center align-items-center text-center text-decoration-none text-black fs-8"><i class="fa-solid fa-paper-plane fa-2x
-                text-black pb-2"></i>Nastavení emailu pro automatické objednávky</a>
+                justify-content-center align-items-center text-center text-decoration-none fs-8"><i class="fa-solid fa-paper-plane fa-2x
+                pb-2"></i>Nastavení emailu pro automatické objednávky</a>
         </div>
 
         <div class="col-4 col-sm-12 col-md-8 col-lg-2 d-flex justify-content-center align-items-center mb-4">

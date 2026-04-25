@@ -40,10 +40,9 @@
 
         const url = `/holidays?year=${currentYear}&country_code=${countryCode}`;
 
-        // Zobrazení načítací zprávy a skrytí všech ostatních sekcí na začátku
+        // Zobrazení skeletonu a skrytí ostatních sekcí na začátku
         if (loadingOrErrorMessage) {
             loadingOrErrorMessage.classList.remove('d-none');
-            loadingOrErrorMessage.textContent = 'Načítání informací...';
         }
         if (holidayFoundSection) holidayFoundSection.classList.add('d-none');
         if (noHolidaySection) noHolidaySection.classList.add('d-none');
@@ -133,7 +132,11 @@
     async function fetchAndDisplayWeather(city = 'Liberec', countryCode = 'CZ') {
         const url = `/weather/current?city=${encodeURIComponent(city)}&country_code=${encodeURIComponent(countryCode)}`;
 
-        weatherInfoContainer.innerHTML = '<p class="text-muted">Načítám data o počasí...</p>';
+        // Skeleton loader je v HTML, nemusíme ho sem vkládat dynamicky, 
+        // ale zajistíme, aby se starý obsah vymazal pokud voláme znovu
+        if (weatherInfoContainer.querySelector('strong')) {
+             weatherInfoContainer.innerHTML = '<div class="skeleton skeleton-text mx-auto" style="width: 60%;"></div><div class="skeleton skeleton-text mx-auto" style="width: 40%;"></div>';
+        }
 
         weatherCardElement.classList.remove('shadow-sunny', 'shadow-partly-cloudy', 'shadow-cloudy-rain', 'shadow-snow');
 
@@ -210,6 +213,15 @@
                 return false;
             });
 
+            const cekaLoading = document.getElementById('loading-ceka');
+            const objeLoading = document.getElementById('loading-obje');
+
+            if (cekaLoading) cekaLoading.classList.add('d-none');
+            if (objeLoading) objeLoading.classList.add('d-none');
+
+            cekaCountElem.classList.remove('d-none');
+            objedCountElem.classList.remove('d-none');
+
             cekaCountElem.textContent = counts.cekajici;
             objedCountElem.textContent = counts['objednáno'];
 
@@ -257,12 +269,19 @@
              const data = await response.json();
 
              // Aktualizace HTML elementů
-             document.getElementById('rok-zobrazeni').textContent = data.rok;
-             document.getElementById('celkova-castka').textContent =
-                 new Intl.NumberFormat('cs-CZ', {
+             const castkaLoading = document.getElementById('loading-castka');
+             const castkaElem = document.getElementById('celkova-castka');
+
+             if (castkaLoading) castkaLoading.classList.add('d-none');
+             if (castkaElem) {
+                 castkaElem.classList.remove('d-none');
+                 castkaElem.textContent = new Intl.NumberFormat('cs-CZ', {
                      style: 'currency',
                      currency: 'CZK'
                  }).format(data.celkove_vydaje);
+             }
+             
+             document.getElementById('rok-zobrazeni').textContent = data.rok;
 
              // Pokud máte graf, můžete ho aktualizovat zde
              // aktualizujGraf(data);

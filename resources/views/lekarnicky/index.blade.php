@@ -125,127 +125,21 @@
                 </div>
             </div>
 
-            <!-- Správa materiálu -->
-            <div id="section-material" class="content-section" style="display: none;">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3>Správa materiálu</h3>
-                    <div>
-                        <select class="form-select d-inline-block w-auto me-2" id="material-lekarnicky-filter">
-                            <option value="">Vyberte lékárničku</option>
-                        </select>
-                        <!-- Dočasně zobrazit tlačítko všem -->
-                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addMaterialModal">
-                            <i class="fa-solid fa-plus"></i> Přidat materiál
-                        </button>
-                    </div>
-                </div>
+            <!-- Sekce vykazy odstraněna a přesunuta do modalu -->
 
-                <div class="m-bg-tran p-3">
-                    <div class="bg-light p-2">
-                        <table id="materialTable" class="table bg-light table-striped table-hover">
-                            <thead>
-                            <tr>
-                                <th>Lékárnička</th>
-                                <th>Materiál</th>
-                                <th>Typ</th>
-                                <th>Aktuální stav</th>
-                                <th>Min. stav</th>
-                                <th>Expirace</th>
-                                <th>Status</th>
-                                <th>Akce</th>
-                            </tr>
-                            </thead>
-                            <tbody id="material-tbody">
-                            <!-- Dynamicky generovaná data -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Záznamy úrazů -->
-            <div id="section-urazy" class="content-section" style="display: none;">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3>Záznamy úrazů</h3>
-                    <!-- Dočasně zobrazit tlačítko všem -->
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addUrazModal">
-                        <i class="fa-solid fa-plus"></i> Zaznamenat úraz
-                    </button>
-                </div>
-
-                <div class="m-bg-tran p-3">
-                    <div class="bg-light p-2">
-                        <table id="urazyTable" class="table bg-light table-striped table-hover">
-                            <thead>
-                            <tr>
-                                <th>Datum</th>
-                                <th>Zaměstnanec</th>
-                                <th>Místo úrazu</th>
-                                <th>Závažnost</th>
-                                <th>Lékárnička</th>
-                                <th>Akce</th>
-                            </tr>
-                            </thead>
-                            <tbody id="urazy-tbody">
-                            <!-- Dynamicky generovaná data -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Výkazy a statistiky -->
-            <div id="section-vykazy" class="content-section" style="display: none;">
-                <h3>Výkazy a statistiky</h3>
-
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>Export dat</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="mb-3">
-                                    <label class="form-label">Období od:</label>
-                                    <input type="date" class="form-control" id="export-od">
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Období do:</label>
-                                    <input type="date" class="form-control" id="export-do">
-                                </div>
-                                <!-- Dočasně zobrazit tlačítko všem -->
-                                <button class="btn btn-success" id="export-vykaz">
-                                    <i class="fa-solid fa-download"></i> Exportovat výkaz
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="card">
-                            <div class="card-header">
-                                <h5>Rychlé statistiky</h5>
-                            </div>
-                            <div class="card-body" id="quick-stats">
-                                <!-- Dynamicky generované statistiky -->
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
         </div>
     </div>
 
     <!-- Prázdné modaly pro začátek -->
     <div class="modal fade" id="addLekarnickModal" tabindex="-1">
         <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Přidat novou lékárničku</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-content glass-modal border-0">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">Přidat novou lékárničku</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <form id="add-lekarnicky-form">
-                    <div class="modal-body">
+                    <div class="modal-body p-4">
                         <div class="mb-3">
                             <label class="form-label">Název lékárničky *</label>
                             <input type="text" class="form-control" name="nazev" required>
@@ -263,11 +157,162 @@
                             <textarea class="form-control" name="popis" rows="3"></textarea>
                         </div>
                     </div>
-                    <div class="modal-footer">
+                    <div class="modal-footer border-0">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zrušit</button>
                         <button type="submit" class="btn btn-primary">Uložit</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pro Seznam materiálu -->
+    <div class="modal fade" id="materialModalList" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content glass-modal border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold fs-4"><i class="fa-solid fa-boxes-stacked me-2"></i> Správa materiálu</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <select class="form-select d-inline-block w-auto glass-input" id="material-lekarnicky-filter">
+                            <option value="">Všechny lékárničky</option>
+                        </select>
+                        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addMaterialModal">
+                            <i class="fa-solid fa-plus me-1"></i> Přidat materiál
+                        </button>
+                    </div>
+                    <div class="table-responsive rounded-3 overflow-hidden">
+                        <table id="materialTable" class="table table-hover mb-0">
+                            <thead class="table-dark-glass">
+                                <tr>
+                                    <th>Lékárnička</th>
+                                    <th>Materiál</th>
+                                    <th>Typ</th>
+                                    <th class="text-center">Stav</th>
+                                    <th class="text-center">Minimálně</th>
+                                    <th>Expirace</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-end px-4">Akce</th>
+                                </tr>
+                            </thead>
+                            <tbody id="material-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal pro Záznamy úrazů -->
+    <div class="modal fade" id="urazyModalList" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content glass-modal border-0 shadow-lg">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold fs-4"><i class="fa-solid fa-file-waveform me-2"></i> Záznamy úrazů</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="d-flex justify-content-end mb-4">
+                        <button class="btn btn-primary shadow-sm" data-bs-toggle="modal" data-bs-target="#addUrazModal">
+                            <i class="fa-solid fa-plus me-1"></i> Zaznamenat úraz
+                        </button>
+                    </div>
+                    <div class="table-responsive rounded-3 overflow-hidden">
+                        <table id="urazyTable" class="table table-hover mb-0">
+                            <thead class="table-dark-glass">
+                                <tr>
+                                    <th>Datum</th>
+                                    <th>Zaměstnanec</th>
+                                    <th>Místo úrazu</th>
+                                    <th>Závažnost</th>
+                                    <th>Lékárnička</th>
+                                    <th class="text-end px-4">Akce</th>
+                                </tr>
+                            </thead>
+                            <tbody id="urazy-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    @include('lekarnicky.modals.add-material')
+    <!-- Modal pro Výkazy a statistiky - FULLSCREEN ANALYTICS -->
+    <div class="modal fade" id="vykazyModalList" tabindex="-1">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content glass-modal border-0">
+                <div class="modal-header border-0 p-4">
+                    <h5 class="modal-title fw-bold fs-3 text-white">
+                        <i class="fa-solid fa-chart-pie me-2 text-primary"></i> Analytický přehled lékárniček
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 pt-0">
+                    <div class="row g-4">
+                        <!-- Horní řada: Rychlé karty -->
+                        <div class="col-12">
+                            <div class="row g-3" id="stats-mini-cards">
+                                <!-- Dynamicky plněno z JS -->
+                            </div>
+                        </div>
+
+                        <!-- Střední řada: Grafy -->
+                        <div class="col-lg-8">
+                            <div class="card bg-white bg-opacity-5 border-white border-opacity-10 rounded-4 h-100">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-4 text-white-50 small text-uppercase">Trend úrazů v čase</h6>
+                                    <div style="height: 350px;">
+                                        <canvas id="injuriesChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="card bg-white bg-opacity-5 border-white border-opacity-10 rounded-4 h-100">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-4 text-white-50 small text-uppercase">Stav materiálu</h6>
+                                    <div style="height: 350px;">
+                                        <canvas id="materialStatusChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Spodní řada: Export a další graf -->
+                        <div class="col-lg-4">
+                            <div class="card bg-white bg-opacity-5 border-white border-opacity-10 rounded-4">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3 text-primary small text-uppercase">Export reportů</h6>
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted">Od:</label>
+                                        <input type="date" class="form-control glass-input" id="export-od">
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small text-muted">Do:</label>
+                                        <input type="date" class="form-control glass-input" id="export-do">
+                                    </div>
+                                    <button class="btn btn-primary w-100 shadow-sm" id="export-vykaz">
+                                        <i class="fa-solid fa-download me-1"></i> Generovat PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-8">
+                            <div class="card bg-white bg-opacity-5 border-white border-opacity-10 rounded-4 h-100">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-4 text-white-50 small text-uppercase">Kontroly lékárniček (posledních 6 měsíců)</h6>
+                                    <div style="height: 250px;">
+                                        <canvas id="inspectionsChart"></canvas>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

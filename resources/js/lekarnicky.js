@@ -51,10 +51,13 @@ export function lekarnicky() {
 
             appData.lekarnicke = data.lekarnicke || [];
             appData.stats = data.statistiky || {};
+            // Pokud API vrací i materiál a úrazy, uložíme je
+            if (data.material) appData.material = data.material;
+            if (data.urazy) appData.urazy = data.urazy;
 
             updateStats();
             showDashboard();
-            loadCurrentSection();
+            // loadCurrentSection(); // ODSTRANĚNO PRO ZABRÁNĚNÍ REKURZE
 
         } catch (error) {
             console.error('Chyba při načítání dashboard:', error);
@@ -97,12 +100,40 @@ export function lekarnicky() {
     function showSection(section) {
         appData.currentSection = section;
 
-        // Skrýt všechny sekce
+        // Zobrazit vybranou sekci nebo otevřít modal
+        if (section === 'material') {
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('materialModalList'));
+            modal.show();
+            loadMaterial();
+            return;
+        }
+
+        if (section === 'urazy') {
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('urazyModalList'));
+            modal.show();
+            loadUrazy();
+            return;
+        }
+
+        if (section === 'vykazy') {
+            const modalElement = document.getElementById('vykazyModalList');
+            const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+            
+            // Grafy se musí inicializovat až když je modal viditelný
+            modalElement.addEventListener('shown.bs.modal', function onShown() {
+                setupVykazy();
+                modalElement.removeEventListener('shown.bs.modal', onShown);
+            }, { once: true });
+            
+            modal.show();
+            return;
+        }
+
+        // Skrýt všechny sekce (pouze pokud přepínáme inline sekce)
         document.querySelectorAll('.content-section').forEach(el => {
             el.style.display = 'none';
         });
 
-        // Zobrazit vybranou sekci
         const targetSection = document.getElementById(`section-${section}`);
         if (targetSection) {
             targetSection.style.display = 'block';
@@ -216,14 +247,35 @@ export function lekarnicky() {
     }
 
     // Načtení materiálu
-    function loadMaterial() {
-        updateMaterialFilter();
-        renderMaterialTable();
+    async function loadMaterial() {
+        try {
+            // Načtení dat bez rekurze
+            const data = await apiCall('/api/lekarnicke/dashboard');
+            appData.lekarnicke = data.lekarnicke || [];
+            appData.stats = data.statistiky || {};
+            
+            updateMaterialFilter();
+            renderMaterialTable();
+        } catch (e) {
+            console.error("Chyba při aktualizaci materiálu", e);
+        }
+    }
 
-        // Inicializace DataTable pokud ještě není
+    // Vykreslení tabulky materiálu
+    function renderMaterialTable() {
+        const tbody = document.getElementById('material-tbody');
+        if (!tbody) return;
+
+        // Zrušit starou instanci DataTables (pokud existuje)
         if ($.fn.DataTable && $.fn.DataTable.isDataTable('#materialTable')) {
             $('#materialTable').DataTable().destroy();
+            $(tbody).empty();
         }
+
+        const materialList = appData.lekarnicke.flatMap(l => 
+            (l.material || []).map(m => ({ ...m, lekarnicky_nazev: l.nazev }))
+        );
+
 
         // Kontrola existence souboru s českým překladem
         const tableConfig = {
@@ -271,6 +323,12 @@ export function lekarnicky() {
         const tbody = document.getElementById('material-tbody');
         if (!tbody) return;
 
+        // Zrušit starou instanci DataTables (pokud existuje)
+        if ($.fn.DataTable && $.fn.DataTable.isDataTable('#materialTable')) {
+            $('#materialTable').DataTable().destroy();
+            $(tbody).empty();
+        }
+
         tbody.innerHTML = '';
 
         // Získání všech materiálů ze všech lékárniček
@@ -299,6 +357,16 @@ export function lekarnicky() {
             const row = createMaterialRow(material);
             tbody.appendChild(row);
         });
+
+        // Inicializace DataTable
+        if ($.fn.DataTable) {
+            const tableConfig = {
+                responsive: true,
+                pageLength: 25,
+                language: { url: '/assets/cs.json' }
+            };
+            $('#materialTable').DataTable(tableConfig);
+        }
     }
 
     // Vytvoření řádku materiálu
@@ -312,18 +380,18 @@ export function lekarnicky() {
         // Kontrola expirací
         if (expirationDate) {
             if (expirationDate < today) {
-                statusBadge = '<span class="badge bg-danger">Expirováno</span>';
-                statusClass = 'table-danger';
+                statusBadge = '<span class="badge bg-danger shadow-sm">Expirováno</span>';
+                statusClass = 'row-danger';
             } else if (expirationDate <= new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000)) {
-                statusBadge = '<span class="badge bg-warning">Brzy expiruje</span>';
-                statusClass = 'table-warning';
+                statusBadge = '<span class="badge bg-warning shadow-sm text-dark">Brzy expiruje</span>';
+                statusClass = 'row-warning';
             }
         }
 
         // Kontrola nízkého stavu
         if (material.aktualni_pocet <= material.minimalni_pocet) {
-            statusBadge += ' <span class="badge bg-danger">Nízký stav</span>';
-            if (!statusClass) statusClass = 'table-warning';
+            statusBadge += ' <span class="badge bg-danger shadow-sm ms-1">Nízký stav</span>';
+            if (!statusClass) statusClass = 'row-warning';
         }
 
         const expirationText = expirationDate ?
@@ -333,20 +401,20 @@ export function lekarnicky() {
         const row = document.createElement('tr');
         row.className = statusClass;
         row.innerHTML = `
-            <td>${material.lekarnicky_nazev}</td>
+            <td><span class="fw-bold text-primary">${material.lekarnicky_nazev}</span></td>
             <td>${material.nazev_materialu}</td>
-            <td>${material.typ_materialu}</td>
-            <td>${material.aktualni_pocet} ${material.jednotka}</td>
-            <td>${material.minimalni_pocet} ${material.jednotka}</td>
-            <td>${expirationText}</td>
-            <td>${statusBadge}</td>
-            <td>
+            <td><small class="text-muted text-uppercase">${material.typ_materialu}</small></td>
+            <td class="text-center"><span class="badge bg-info text-dark">${material.aktualni_pocet} ${material.jednotka}</span></td>
+            <td class="text-center"><small class="text-muted">${material.minimalni_pocet} ${material.jednotka}</small></td>
+            <td><i class="fa-regular fa-calendar-alt me-1"></i> ${expirationText}</td>
+            <td class="text-center">${statusBadge}</td>
+            <td class="text-end px-4">
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-primary" onclick="editMaterial(${material.id})">
-                        <i class="fa-solid fa-edit"></i>
+                    <button class="btn btn-link text-primary p-0 me-3" onclick="editMaterial(${material.id})">
+                        <i class="fa-solid fa-pen-to-square fs-5"></i>
                     </button>
-                    <button class="btn btn-outline-danger" onclick="deleteMaterial(${material.id})">
-                        <i class="fa-solid fa-trash"></i>
+                    <button class="btn btn-link text-danger p-0" onclick="deleteMaterial(${material.id})">
+                        <i class="fa-solid fa-trash-can fs-5"></i>
                     </button>
                 </div>
             </td>
@@ -363,6 +431,7 @@ export function lekarnicky() {
         // Zrušit starou instanci DataTables (pokud existuje)
         if ($.fn.DataTable && $.fn.DataTable.isDataTable('#urazyTable')) {
             $('#urazyTable').DataTable().destroy();
+            $(tbody).empty();
         }
 
         try {
@@ -383,23 +452,23 @@ export function lekarnicky() {
                         ? u.lekarnicky.nazev
                         : '—';
                     const zavaznostBadge = {
-                        'lehky': '<span class="badge bg-success">Lehký</span>',
-                        'stredni': '<span class="badge bg-warning text-dark">Střední</span>',
-                        'tezky': '<span class="badge bg-danger">Těžký</span>'
+                        'lehky': '<span class="badge bg-success shadow-sm">Lehký</span>',
+                        'stredni': '<span class="badge bg-warning shadow-sm text-dark">Střední</span>',
+                        'tezky': '<span class="badge bg-danger shadow-sm">Těžký</span>'
                     }[u.zavaznost] || u.zavaznost || '—';
 
                     return `
                         <tr>
-                            <td>${datum}</td>
-                            <td>${zamestnanec}</td>
+                            <td><i class="fa-regular fa-clock me-1 text-muted"></i> ${datum}</td>
+                            <td><span class="fw-bold">${zamestnanec}</span></td>
                             <td>${u.misto_urazu || '—'}</td>
                             <td>${zavaznostBadge}</td>
-                            <td>${lekarnicka}</td>
-                            <td>
-                                <button class="btn btn-sm btn-outline-danger"
+                            <td><span class="text-primary">${lekarnicka}</span></td>
+                            <td class="text-end px-4">
+                                <button class="btn btn-link text-danger p-0"
                                         onclick="deleteUraz(${u.id})"
                                         title="Smazat záznam">
-                                    <i class="fa-solid fa-trash"></i>
+                                    <i class="fa-solid fa-trash-can fs-5"></i>
                                 </button>
                             </td>
                         </tr>
@@ -411,8 +480,7 @@ export function lekarnicky() {
             if ($.fn.DataTable) {
                 const tableConfig = {
                     responsive: true,
-                    pageLength: 25,
-                    order: [[0, 'desc']],
+                    pageLength: 10,
                     language: { url: '/assets/cs.json' }
                 };
                 $('#urazyTable').DataTable(tableConfig);
@@ -780,7 +848,174 @@ window.editMaterial = async function(id) {
                 showSection(section);
             });
         });
+    }
 
+    // Nastavení výkazů a statistik
+    function setupVykazy() {
+        const miniCardsContainer = document.getElementById('stats-mini-cards');
+        if (!miniCardsContainer) return;
+
+        const stats = appData.stats;
+        
+        // Vykreslení horních karet
+        miniCardsContainer.innerHTML = `
+            <div class="col-md-3">
+                <div class="p-3 rounded-4 bg-primary bg-opacity-10 border border-primary border-opacity-20">
+                    <div class="small text-white-50 text-uppercase fw-bold mb-1">Lékárničky</div>
+                    <div class="h3 fw-bold text-white mb-0">${stats.celkem_lekarnicek || 0}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded-4 bg-warning bg-opacity-10 border border-warning border-opacity-20">
+                    <div class="small text-white-50 text-uppercase fw-bold mb-1">Expirace</div>
+                    <div class="h3 fw-bold text-warning mb-0">${stats.expirujici_material || 0}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded-4 bg-danger bg-opacity-10 border border-danger border-opacity-20">
+                    <div class="small text-white-50 text-uppercase fw-bold mb-1">Nízký stav</div>
+                    <div class="h3 fw-bold text-danger mb-0">${stats.nizky_stav_material || 0}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="p-3 rounded-4 bg-info bg-opacity-10 border border-info border-opacity-20">
+                    <div class="small text-white-50 text-uppercase fw-bold mb-1">Úrazy / měsíc</div>
+                    <div class="h3 fw-bold text-info mb-0">${stats.urazy_tento_mesic || 0}</div>
+                </div>
+            </div>
+        `;
+
+        // Inicializace grafů
+        renderCharts();
+
+        // Event listener pro export
+        const exportBtn = document.getElementById('export-vykaz');
+        if (exportBtn) {
+            exportBtn.onclick = async () => {
+                const od = document.getElementById('export-od').value;
+                const doDate = document.getElementById('export-do').value;
+                if (!od || !doDate) {
+                    showNotification('Vyberte prosím období pro export', 'warning');
+                    return;
+                }
+                showNotification('Generuji výkaz, prosím čekejte...', 'info');
+                window.location.href = `/api/lekarnicke/export?od=${od}&do=${doDate}`;
+            };
+        }
+    }
+
+    let charts = {}; // Uložiště pro instance grafů pro pozdější zničení
+
+    async function renderCharts() {
+        if (typeof Chart === 'undefined') {
+            console.error('Chart.js není načteno!');
+            return;
+        }
+
+        try {
+            // Načtení reálných dat z backendu
+            const statsData = await apiCall('/api/lekarnicke/stats');
+
+            // Barvy pro grafy
+            const colors = {
+                primary: '#0d6efd',
+                danger: '#dc3545',
+                warning: '#ffc107',
+                info: '#0dcaf0',
+                text: '#e2e8f0'
+            };
+
+            // Zničit staré grafy pokud existují
+            Object.values(charts).forEach(c => c.destroy());
+
+            // 1. Trend úrazů (Line Chart)
+            const ctxInjuries = document.getElementById('injuriesChart');
+            if (ctxInjuries) {
+                charts.injuries = new Chart(ctxInjuries, {
+                    type: 'line',
+                    data: {
+                        labels: statsData.injuries.map(i => i.label),
+                        datasets: [{
+                            label: 'Počet úrazů',
+                            data: statsData.injuries.map(i => i.count),
+                            borderColor: colors.info,
+                            backgroundColor: 'rgba(13, 202, 240, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: colors.text, stepSize: 1 } },
+                            x: { grid: { display: false }, ticks: { color: colors.text } }
+                        }
+                    }
+                });
+            }
+
+            // 2. Stav materiálu (Doughnut Chart)
+            const ctxMaterial = document.getElementById('materialStatusChart');
+            if (ctxMaterial) {
+                charts.material = new Chart(ctxMaterial, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['V pořádku', 'Nízký stav', 'Expirováno'],
+                        datasets: [{
+                            data: [
+                                statsData.materials.ok,
+                                statsData.materials.low,
+                                statsData.materials.expired
+                            ],
+                            backgroundColor: [colors.primary, colors.warning, colors.danger],
+                            borderWidth: 0,
+                            hoverOffset: 10
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { position: 'bottom', labels: { color: colors.text, padding: 20 } }
+                        },
+                        cutout: '70%'
+                    }
+                });
+            }
+
+            // 3. Kontroly (Bar Chart) - Vylepšeno na reálná data (Pending vs Done)
+            const ctxInspections = document.getElementById('inspectionsChart');
+            if (ctxInspections) {
+                charts.inspections = new Chart(ctxInspections, {
+                    type: 'bar',
+                    data: {
+                        labels: ['V pořádku', 'Nutná kontrola'],
+                        datasets: [{
+                            label: 'Lékárničky',
+                            data: [statsData.inspections.done, statsData.inspections.pending],
+                            backgroundColor: [colors.primary, colors.danger],
+                            borderRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        indexAxis: 'y', // Horizontální graf
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: colors.text, stepSize: 1 } },
+                            y: { grid: { display: false }, ticks: { color: colors.text } }
+                        }
+                    }
+                });
+            }
+        } catch (error) {
+            console.error('Chyba při načítání dat pro grafy:', error);
+            showNotification('Nepodařilo se načíst data pro grafy', 'error');
+        }
+    }
         // Filter materiálu podle lékárničky
         const materialFilter = document.getElementById('material-lekarnicky-filter');
         if (materialFilter) {
@@ -834,7 +1069,6 @@ window.editMaterial = async function(id) {
                 populateZamestnanciSelect('uraz-zamestnanec-select');
             });
         }
-    }
 
     // Filter materiálu
     function filterMaterial(lekarnicky_id) {
@@ -954,3 +1188,4 @@ window.editMaterial = async function(id) {
     setupEventListeners();
     loadDashboard();
 }
+

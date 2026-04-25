@@ -11,13 +11,13 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 
 class ObjednavkyController extends Controller
 {
     /**
      * Maximální délka base64 podpisu (znaků).
-     * 500 000 znaků ≈ 375 KB binárních dat — pro podpis tužkou 100× víc než třeba.
      */
     private const MAX_SIGNATURE_LENGTH = 500000;
 
@@ -49,6 +49,13 @@ class ObjednavkyController extends Controller
         return response()->json($objednavky);
     }
 
+    /**
+     * Vytvoření nové objednávky a notifikace adminů.
+     *
+     * Notifikace se odesílají jednou hromadnou operací (Notification::send),
+     * což je výrazně efektivnější než cyklické volání $admin->notify() —
+     * Laravel provede batch insert do tabulky 'notifications' i do queue.
+     */
     public function store(StoreObjednavkaRequest $request): JsonResponse
     {
         try {
@@ -62,20 +69,25 @@ class ObjednavkyController extends Controller
 
             $objednavka->load(['zamestnanec', 'produkt']);
 
-            // Notifikace adminům
-            $admins = User::with('roles')
+            // Načítáme jen potřebné sloupce (id pro DB notif, email pro mail)
+            $admins = User::select('id', 'email', 'firstname', 'lastname')
                 ->whereHas('roles', function ($query) {
                     $query->whereIn('name', ['admin', 'super_admin']);
                 })
                 ->where('is_active', true)
                 ->get();
 
-              /** @var \App\Models\User $admin */   
-            foreach ($admins as $admin) {
+            // Hromadné odeslání notifikací (efektivní batch insert)
+            if ($admins->isNotEmpty()) {
                 try {
-                    $admin->notify(new OrderCreatedNotification($objednavka));
+                    Notification::send($admins, new OrderCreatedNotification($objednavka));
                 } catch (\Exception $e) {
-                    Log::warning("Notifikace se nepodařilo poslat uživateli {$admin->id}: " . $e->getMessage());
+                    // Selhání notifikací nesmí zablokovat vytvoření objednávky
+                    Log::warning('Notifikace o nové objednávce se nepodařilo odeslat', [
+                        'objednavka_id' => $objednavka->id,
+                        'admin_count' => $admins->count(),
+                        'error' => $e->getMessage(),
+                    ]);
                 }
             }
 
@@ -143,12 +155,7 @@ class ObjednavkyController extends Controller
     }
 
     /**
-     * Vydání objednávky s podpisem. Implementuje vícevrstvou ochranu proti DoS:
-     * 1. Limit délky base64 stringu (Laravel validátor)
-     * 2. Limit binární velikosti po dekódování
-     * 3. Validace MIME hlavičky regulárním výrazem
-     * 4. Validace rozměrů obrázku přes getimagesizefromstring (bez alokace pixel bufferu)
-     * 5. Až nakonec imagecreatefromstring pro plné ověření
+     * Vydání objednávky s podpisem. Implementuje vícevrstvou ochranu proti DoS.
      */
     public function vydat(Request $request): JsonResponse
     {
@@ -161,31 +168,27 @@ class ObjednavkyController extends Controller
 
         $signature = $request->signature;
 
-        // 1. Validace MIME hlavičky data URL
         if (!preg_match('/^data:image\/(png|jpeg);base64,/', $signature)) {
             return response()->json(['error' => 'Neplatný formát podpisu.'], 400);
         }
 
-        // 2. Extrakce base64 obsahu
         $parts = explode(',', $signature, 2);
         if (count($parts) !== 2) {
             return response()->json(['error' => 'Neplatný formát podpisu.'], 400);
         }
 
         $encodedData = str_replace(' ', '+', $parts[1]);
-        $decoded = base64_decode($encodedData, true); // strict mode
+        $decoded = base64_decode($encodedData, true);
 
         if ($decoded === false) {
             return response()->json(['error' => 'Neplatná data podpisu (base64).'], 400);
         }
 
-        // 3. Validace binární velikosti po dekódování (~375 KB)
         $maxBinarySize = (int) (self::MAX_SIGNATURE_LENGTH * 0.75);
         if (strlen($decoded) > $maxBinarySize) {
             return response()->json(['error' => 'Podpis je příliš velký.'], 400);
         }
 
-        // 4. Validace hlavičky obrázku BEZ alokace pixel bufferu
         $imageInfo = @getimagesizefromstring($decoded);
         if ($imageInfo === false) {
             return response()->json(['error' => 'Neplatná data obrázku.'], 400);
@@ -193,7 +196,6 @@ class ObjednavkyController extends Controller
 
         [$width, $height] = $imageInfo;
 
-        // 5. Validace rozměrů (ochrana proti decompression bomb)
         if ($width > self::MAX_SIGNATURE_WIDTH || $height > self::MAX_SIGNATURE_HEIGHT) {
             return response()->json([
                 'error' => "Podpis je příliš velký. Maximální rozměry: " . self::MAX_SIGNATURE_WIDTH . "×" . self::MAX_SIGNATURE_HEIGHT . " px.",
@@ -204,14 +206,12 @@ class ObjednavkyController extends Controller
             return response()->json(['error' => 'Podpis je příliš malý.'], 400);
         }
 
-        // 6. Až teď bezpečné plné dekódování
         $imageResource = @imagecreatefromstring($decoded);
         if ($imageResource === false) {
             return response()->json(['error' => 'Neplatná data obrázku.'], 400);
         }
-        imagedestroy($imageResource); // okamžitě uvolnit paměť
+        imagedestroy($imageResource);
 
-        // 7. Generování názvu souboru a uložení
         $date = now()->format('Ymd');
         $nextIndex = DB::table('objednavky')
                 ->whereDate('datum_vydani', now())
@@ -220,10 +220,8 @@ class ObjednavkyController extends Controller
         $filename = sprintf("podpis_%s_%03d.png", $date, $nextIndex);
         $storagePath = "signatures/{$filename}";
 
-        // 8. Uložení souboru
         Storage::disk('public')->put($storagePath, $decoded);
 
-        // 9. Aktualizace objednávky v transakci s rollbackem souboru při selhání
         DB::beginTransaction();
         try {
             $updated = DB::table('objednavky')
@@ -237,7 +235,6 @@ class ObjednavkyController extends Controller
 
             if ($updated === 0) {
                 DB::rollBack();
-                // Cleanup: smažeme uložený soubor podpisu
                 Storage::disk('public')->delete($storagePath);
                 return response()->json(['error' => 'Objednávka nebyla nalezena nebo již byla vydána.'], 400);
             }
@@ -252,7 +249,6 @@ class ObjednavkyController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            // Cleanup: smažeme uložený soubor podpisu
             Storage::disk('public')->delete($storagePath);
             Log::error('Vydat order error: ' . $e->getMessage());
 

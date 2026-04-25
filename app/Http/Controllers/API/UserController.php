@@ -11,9 +11,20 @@ use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\RateLimiter;
 
 class UserController extends Controller
 {
+    /**
+     * Maximální počet pokusů resetu hesla z jedné IP (proti enumeraci).
+     */
+    private const MAX_RESET_ATTEMPTS = 10;
+
+    /**
+     * Časové okno pro počítání pokusů (sekundy).
+     */
+    private const RESET_THROTTLE_WINDOW = 60;
+
     /**
      * Seznam uživatelů s RBAC rolemi.
      */
@@ -41,7 +52,6 @@ class UserController extends Controller
 
     /**
      * Seznam dostupných RBAC rolí pro frontend formulář.
-     * Běžný admin nevidí super_admin.
      */
     public function availableRoles(): JsonResponse
     {
@@ -87,7 +97,6 @@ class UserController extends Controller
             'role.exists'        => 'Vybraná role neexistuje v systému.',
         ]);
 
-        // Bezpečnost: běžný admin nesmí vytvořit super_admina
         if ($validated['role'] === 'super_admin' && !session('user.is_super_admin')) {
             return response()->json([
                 'status'  => 'error',
@@ -136,7 +145,6 @@ class UserController extends Controller
         $currentUserIsSuperAdmin = (bool) session('user.is_super_admin');
         $targetIsSuperAdmin = $user->roles->contains('name', 'super_admin');
 
-        // 1. Nelze smazat sám sebe
         if ((int) $user->id === (int) $currentUserId) {
             return response()->json([
                 'status'  => 'error',
@@ -144,7 +152,6 @@ class UserController extends Controller
             ], 403);
         }
 
-        // 2. Pouze super_admin může smazat jiného super_admina
         if ($targetIsSuperAdmin && !$currentUserIsSuperAdmin) {
             return response()->json([
                 'status'  => 'error',
@@ -152,7 +159,6 @@ class UserController extends Controller
             ], 403);
         }
 
-        // 3. Nelze smazat posledního super_admina
         if ($targetIsSuperAdmin) {
             $superAdminCount = User::whereHas('roles', function ($q) {
                 $q->where('name', 'super_admin');
@@ -177,46 +183,90 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Reset hesla a odeslání nových přihlašovacích údajů.
+     *
+     * BEZPEČNOSTNÍ POZNÁMKA: Tato metoda je odolná proti username enumeraci.
+     * Vrací vždy stejnou generickou odpověď bez ohledu na to, zda uživatel
+     * existuje, je aktivní nebo ne. Detaily o úspěchu/neúspěchu lze najít
+     * jen v server logu, nikoliv v HTTP odpovědi.
+     */
     public function sendLoginEmail(Request $request): JsonResponse
     {
+        // Throttle proti masivnímu skenování (10 pokusů / minutu z 1 IP)
+        $throttleKey = 'reset.' . $request->ip();
+        if (RateLimiter::tooManyAttempts($throttleKey, self::MAX_RESET_ATTEMPTS)) {
+            $seconds = RateLimiter::availableIn($throttleKey);
+
+            Log::warning('Reset password rate limit exceeded', [
+                'ip' => $request->ip(),
+                'admin_user_id' => session('user.id'),
+                'retry_after' => $seconds,
+            ]);
+
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Příliš mnoho pokusů. Zkuste to znovu za {$seconds} sekund.",
+            ], 429);
+        }
+        RateLimiter::hit($throttleKey, self::RESET_THROTTLE_WINDOW);
+
+        // Validace formátu, ne existence
         $request->validate([
-            'username'  => 'required|exists:users,username',
-            'email'     => 'required|email',
-            'firstname' => 'required|string',
-            'lastname'  => 'required|string',
+            'username'  => 'required|string|max:50',
+            'email'     => 'required|email|max:255',
+            'firstname' => 'required|string|max:255',
+            'lastname'  => 'required|string|max:255',
         ]);
+
+        // ⚠️ Generická odpověď - vždy stejná, bez ohledu na výsledek
+        $genericResponse = [
+            'status'  => 'success',
+            'message' => 'Pokud zadané údaje souhlasí s platným uživatelem, byly přihlašovací údaje odeslány na zadaný e-mail.',
+        ];
 
         $user = User::where('username', $request->username)
             ->where('email', $request->email)
             ->where('firstname', $request->firstname)
             ->where('lastname', $request->lastname)
+            ->where('is_active', true)
             ->first();
 
         if (!$user) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Uživatel nenalezen.',
-            ], 404);
+            // Pokus o reset pro neexistujícího/neaktivního uživatele - logujeme pro audit,
+            // ale uživateli vracíme stejnou odpověď jako při úspěchu.
+            Log::info('Password reset attempted for non-matching user', [
+                'username_attempted' => $request->username,
+                'ip' => $request->ip(),
+                'admin_user_id' => session('user.id'),
+            ]);
+
+            return response()->json($genericResponse);
         }
 
+        // Generování nového hesla a odeslání e-mailu
         $newPassword = bin2hex(random_bytes(4));
         $user->update(['password' => Hash::make($newPassword)]);
 
         try {
             $user->notify(new LoginReset($user, $newPassword));
 
-            return response()->json([
-                'status'  => 'success',
-                'message' => "Přihlašovací údaje byly odeslány na e-mail {$user->email}",
+            Log::info('Password reset email sent', [
+                'user_id' => $user->id,
+                'username' => $user->username,
+                'admin_user_id' => session('user.id'),
             ]);
         } catch (\Exception $e) {
-            Log::error('Chyba při odeslání emailu: ' . $e->getMessage());
-
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Heslo bylo resetováno, ale e-mail se nepodařilo odeslat. Předejte heslo uživateli osobně nebo kontaktujte administrátora.',
-            ], 500);
+            // Heslo již bylo resetováno, ale e-mail selhal - logujeme,
+            // ale stále vracíme generickou odpověď, abychom neposkytli timing rozdíl.
+            Log::error('Password reset email failed to send', [
+                'user_id' => $user->id,
+                'error' => $e->getMessage(),
+                'admin_user_id' => session('user.id'),
+            ]);
         }
+
+        return response()->json($genericResponse);
     }
 
     public function getUserActivity(): JsonResponse

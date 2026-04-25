@@ -30,8 +30,8 @@
                         <thead>
                         <tr>
                             <th class="text-center">Jméno</th>
-                            <th class="text-center">Přímeni</th>
-                            <th class="text-center">Site</th>
+                            <th class="text-center">Příjmení</th>
+                            <th class="text-center">Středisko</th>
                             <th class="text-center">Akce</th>
                         </tr>
                         </thead>

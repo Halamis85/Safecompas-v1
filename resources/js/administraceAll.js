@@ -261,7 +261,8 @@ function administraceAll() {
                                 }))
                                 .then(result => {
                                     if (result.status === 'success') {
-                                        displayMessage(zpravaPri, 'Přihlašovací údaje byly odeslány na e-mail ' + email, true);
+                                        // Generická odpověď ze serveru - server neříká, jestli uživatel skutečně existoval
+                                        displayMessage(zpravaPri, result.message || 'Požadavek na reset přihlašovacích údajů byl zpracován.', true);
                                     } else {
                                         displayMessage(zpravaErr, 'Chyba: ' + (result.message || 'Neznámá chyba.'), false);
                                     }
