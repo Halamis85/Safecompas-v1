@@ -1,5 +1,4 @@
 <?php
-
 // database/seeders/RolePermissionSeeder.php
 
 namespace Database\Seeders;
@@ -7,7 +6,6 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use App\Models\Role;
 use App\Models\Permission;
-use App\Models\User;
 
 class RolePermissionSeeder extends Seeder
 {
@@ -56,33 +54,33 @@ class RolePermissionSeeder extends Seeder
             [
                 'name' => 'super_admin',
                 'display_name' => 'Super Administrátor',
-                'description' => 'Úplný přístup ke všem funkcím systému'
+                'description' => 'Úplný přístup ke všem funkcím systému',
             ],
             [
                 'name' => 'admin',
                 'display_name' => 'Administrátor',
-                'description' => 'Přístup k administraci a správě uživatelů'
+                'description' => 'Přístup k administraci a správě uživatelů',
             ],
             [
                 'name' => 'manager',
                 'display_name' => 'Manažer',
-                'description' => 'Přístup ke všem modulům bez administrace'
+                'description' => 'Přístup ke všem modulům bez administrace',
             ],
             [
                 'name' => 'oopp_user',
                 'display_name' => 'OOPP Uživatel',
-                'description' => 'Přístup pouze k modulu OOPP'
+                'description' => 'Přístup pouze k modulu OOPP',
             ],
             [
                 'name' => 'lekarnicky_user',
                 'display_name' => 'Lékárničky Uživatel',
-                'description' => 'Přístup pouze k modulu Lékárničky'
+                'description' => 'Přístup pouze k modulu Lékárničky',
             ],
             [
                 'name' => 'viewer',
                 'display_name' => 'Prohlížeč',
-                'description' => 'Pouze prohlížení, bez možnosti úprav'
-            ]
+                'description' => 'Pouze prohlížení, bez možnosti úprav',
+            ],
         ];
 
         foreach ($roles as $role_data) {
@@ -106,8 +104,9 @@ class RolePermissionSeeder extends Seeder
                 case 'manager':
                     $managerPermissions = Permission::whereIn('name', [
                         'oopp.view', 'oopp.create', 'oopp.edit',
-                        'lekarnicke.view', 'lekarnicke.create', 'lekarnicke.edit', 'lekarnicke.material', 'lekarnicke.urazy',
-                        'notifications.view', 'stats.view', 'stats.export'
+                        'lekarnicke.view', 'lekarnicke.create', 'lekarnicke.edit',
+                        'lekarnicke.material', 'lekarnicke.urazy',
+                        'notifications.view', 'stats.view', 'stats.export',
                     ])->pluck('id');
                     $role->permissions()->sync($managerPermissions);
                     break;
@@ -133,25 +132,9 @@ class RolePermissionSeeder extends Seeder
             }
         }
 
-        // Migrace existujících uživatelů
-        $this->migrateExistingUsers();
-    }
-
-    private function migrateExistingUsers()
-    {
-        $users = User::all();
-
-        foreach ($users as $user) {
-            // Migrace založená na starém sloupci 'role'
-            switch ($user->role) {
-                case 'admin':
-                    $user->giveRoleTo('admin');
-                    break;
-                case 'user':
-                default:
-                    $user->giveRoleTo('oopp_user');
-                    break;
-            }
-        }
+        // Volání migrateExistingUsers() bylo odstraněno.
+        // Migrace existujících uživatelů z legacy 'role' sloupce na RBAC
+        // už proběhla. Pokud by bylo potřeba ji znovu spustit, použijte
+        // dedikovaný seeder MigrateOldRolesToRbac (nyní také odstraněn).
     }
 }

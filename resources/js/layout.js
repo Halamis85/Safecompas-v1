@@ -58,33 +58,137 @@
 
         // --- Inactivity Timer logic ---
         // CELÁ tato funkce musí být definována a volána uvnitř DOMContentLoaded.
-        let inactivityTime = function () {
-            let time;
-            const maxIdleTimeMs = 600 * 1000; // 10 minut v milisekundách, musí odpovídat PHP
+let inactivityTime = function () {
+    // Pouze pro přihlášené uživatele
+    const authMeta = document.querySelector('meta[name="user-authenticated"]');
+    if (!authMeta || authMeta.content !== 'true') {
+        return;
+    }
 
-            // Resetuje časovač aktivity při různých událostech
-            document.addEventListener('mousemove', resetTimer);
-            document.addEventListener('keydown', resetTimer);
-            document.addEventListener('mousedown', resetTimer);
-            document.addEventListener('touchstart', resetTimer);
-            document.addEventListener('click', resetTimer);
-            document.addEventListener('scroll', resetTimer);
+    let logoutTimer;
+    let warningTimer;
+    let countdownInterval;
 
-            function logout() {
-                window.location.href = '/login?timeout=true';
+    // Čtení hodnoty ze <meta name="session-lifetime"> (v sekundách)
+    const metaLifetime = document.querySelector('meta[name="session-lifetime"]');
+    const sessionLifetimeSec = metaLifetime
+        ? parseInt(metaLifetime.getAttribute('content'), 10)
+        : 1800; // fallback 30 min
+
+    // Klient odhlásí o 30s dřív než server (čistý redirect místo 401 chyby)
+    const maxIdleTimeMs = Math.max((sessionLifetimeSec - 30) * 1000, 60 * 1000);
+    const warningBeforeMs = 2 * 60 * 1000; // varování 2 min před odhlášením
+    const warningTimeMs = Math.max(maxIdleTimeMs - warningBeforeMs, 30 * 1000);
+
+    // Reference na DOM elementy modalu
+    const warningModalEl = document.getElementById('sessionWarningModal');
+    const countdownEl = document.getElementById('sessionCountdown');
+    const stayLoggedBtn = document.getElementById('stayLoggedBtn');
+
+    // Bootstrap modal instance (pokud existuje)
+    let warningModal = null;
+    if (warningModalEl && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        warningModal = new bootstrap.Modal(warningModalEl);
+    }
+
+    function clearAllTimers() {
+        clearTimeout(logoutTimer);
+        clearTimeout(warningTimer);
+        clearInterval(countdownInterval);
+    }
+
+    function logout() {
+        clearAllTimers();
+        window.location.href = '/login?timeout=true';
+    }
+
+    function updateCountdown(seconds) {
+        if (!countdownEl) return;
+        const mins = Math.floor(Math.max(seconds, 0) / 60);
+        const secs = Math.max(seconds, 0) % 60;
+        countdownEl.textContent = `${mins}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function showWarning() {
+        if (!warningModal) {
+            return; // bez modalu prostě počkáme na logoutTimer
+        }
+
+        let remaining = Math.floor(warningBeforeMs / 1000);
+        updateCountdown(remaining);
+        warningModal.show();
+
+        countdownInterval = setInterval(() => {
+            remaining--;
+            updateCountdown(remaining);
+            if (remaining <= 0) {
+                clearInterval(countdownInterval);
             }
+        }, 1000);
+    }
 
-            function resetTimer() {
-                clearTimeout(time);
-                time = setTimeout(logout, maxIdleTimeMs);
+    function hideWarning() {
+        if (warningModal) {
+            warningModal.hide();
+        }
+        clearInterval(countdownInterval);
+    }
+
+    async function extendSession() {
+        try {
+            const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+            const response = await fetch('/extend-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken || ''
+                }
+            });
+
+            if (response.ok) {
+                hideWarning();
+                resetTimer();
+            } else if (response.status === 401) {
+                logout();
+            } else {
+                console.warn('Extend session vrátil status', response.status);
+                logout();
             }
+        } catch (e) {
+            console.warn('Nepodařilo se prodloužit session:', e);
+            logout();
+        }
+    }
 
-            // Spusťte časovač ihned při inicializaci
+        function resetTimer() {
+            clearAllTimers();
+            warningTimer = setTimeout(showWarning, warningTimeMs);
+            logoutTimer = setTimeout(logout, maxIdleTimeMs);
+        }
+
+    // Aktivita resetuje časovač POUZE pokud není zobrazen warning modal
+    // (uživatel musí explicitně potvrdit kliknutím)
+        function maybeResetTimer() {
+            if (warningModalEl && warningModalEl.classList.contains('show')) {
+                return;
+            }
             resetTimer();
-        };
+        }
 
-        // Spusťte funkci po načtení stránky (uvnitř DOMContentLoaded)
-        inactivityTime();
+        document.addEventListener('mousemove', maybeResetTimer);
+        document.addEventListener('keydown', maybeResetTimer);
+        document.addEventListener('mousedown', maybeResetTimer);
+        document.addEventListener('touchstart', maybeResetTimer);
+        document.addEventListener('click', maybeResetTimer);
+        document.addEventListener('scroll', maybeResetTimer);
+
+        if (stayLoggedBtn) {
+            stayLoggedBtn.addEventListener('click', extendSession);
+        }
+
+        resetTimer();
+};
 
     const toggleButton = document.getElementById('profileSidebarToggle');
     const sidebar = document.getElementById('profileSidebar');

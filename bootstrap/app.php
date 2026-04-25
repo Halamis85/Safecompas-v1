@@ -14,16 +14,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Registrace custom middleware
         $middleware->alias([
-            'custom.auth' => \App\Http\Middleware\CustomAuth::class,
-            'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'permission' => \App\Http\Middleware\PermissionMiddleware::class,
+            'custom.auth'      => \App\Http\Middleware\CustomAuth::class,
+            'role'             => \App\Http\Middleware\RoleMiddleware::class,
+            'permission'       => \App\Http\Middleware\PermissionMiddleware::class,
             'lekarnick.access' => \App\Http\Middleware\LekarnickAccessMiddleware::class,
-        ]);
-
-        // Globální middleware pro web routes
-        $middleware->web(append: [
-            \Illuminate\Session\Middleware\StartSession::class,
-            \Illuminate\View\Middleware\ShareErrorsFromSession::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -1,7 +1,7 @@
 
 
 <div class="dropdown notification-dropdown ">
-    <button class="btn btn-outline-secondary position-relative" type="button" id="notificationDropdown"
+    <button class="btn btn-outline-secondary position-relative me-4 rounded-circle p-2" type="button" id="notificationDropdown"
             data-bs-toggle="dropdown" aria-expanded="false">
         <i class="fas fa-bell"></i>
         <span id="notification-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"

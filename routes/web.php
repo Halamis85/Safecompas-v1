@@ -153,6 +153,7 @@ Route::middleware(['custom.auth'])->group(function () {
             Route::get('/users', [HomeController::class, 'users']);
             Route::get('/user_aktivity', [HomeController::class, 'userAktivity']);
             Route::get('/adminUser', [UserController::class, 'index']);
+            Route::get('/api/users/available-roles', [UserController::class, 'availableRoles']); // ← PŘIDAT TENTO ŘÁDEK
             Route::post('/add_users', [UserController::class, 'store']);
             Route::delete('/users/{id}', [UserController::class, 'destroy']);
             Route::post('/send-login-email', [UserController::class, 'sendLoginEmail'])->name('send.login.email');

@@ -14,11 +14,11 @@ class Role extends Model
         'name',
         'display_name',
         'description',
-        'is_active'
+        'is_active',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean'
+        'is_active' => 'boolean',
     ];
 
     public function permissions()
@@ -31,16 +31,27 @@ class Role extends Model
         return $this->belongsToMany(User::class, 'user_roles');
     }
 
-    public function hasPermission($permission)
+    /**
+     * Kontrola, zda má role dané oprávnění.
+     * Sloupce kvalifikujeme tabulkou kvůli pivot tabulce role_permissions.
+     *
+     * @param string|Permission $permission
+     * @return bool
+     */
+    public function hasPermission($permission): bool
     {
         if (is_string($permission)) {
-            return $this->permissions()->where('name', $permission)->exists();
+            return $this->permissions()->where('permissions.name', $permission)->exists();
         }
 
-        return $this->permissions()->where('id', $permission->id)->exists();
+        if ($permission instanceof Permission) {
+            return $this->permissions()->where('permissions.id', $permission->id)->exists();
+        }
+
+        return false;
     }
 
-    public function givePermissionTo($permission)
+    public function givePermissionTo($permission): void
     {
         if (is_string($permission)) {
             $permission = Permission::where('name', $permission)->first();

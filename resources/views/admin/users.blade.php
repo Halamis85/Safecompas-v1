@@ -58,22 +58,21 @@
                                     <div class="col-sm-6 mb-3">
                                         <label for="password" class="form-label"></label>
                                         <input type="password" class="form-control shadow-sm"
-                                               id="password" name="password" placeholder="Heslo">
+                                               id="password" name="password"  placeholder="Heslo (min. 8 znaků)"
+                                               minlength="8" required>
                                     </div>
                                     <div class="col-sm-6 mb-3">
                                         <label for="alias" class="form-label"></label>
                                         <input type="text" class="form-control shadow-sm"
                                                id="alias" name="alias" placeholder="Oslovení ">
                                     </div>
-                                    <div class="form-group row">
-                                        <div class="col-sm-6 ">
-                                            <label for="role"></label>
-                                            <select id="role" name="role" required class="form-control shadow-sm">
-                                                <option value="" selected disabled>Vyberte uživatelskou roly</option>
-                                                <option value="admin">Admin</option>
-                                                <option value="user">User</option>
-                                                <option value="editor">Editor</option>
-                                            </select>
+                                   <div class="form-group row">
+                                       <div class="col-sm-6 mb-3">
+                                          <label for="role" class="form-label small">Role uživatele</label>
+                                           <select id="role" name="role" required class="form-control shadow-sm">
+                                               <option value="" selected disabled>Načítání rolí...</option>
+                                           </select>
+                                            <small class="text-muted">Role určuje, k čemu má uživatel přístup.</small>
                                         </div>
                                     </div>
                                     <button type="submit" class="btn btn-primary btn-user btn-block shadow mt-4 mb-4 d">

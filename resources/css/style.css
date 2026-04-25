@@ -49,7 +49,7 @@
     100% {
         box-shadow:
                 0 0.25rem 0.3rem rgba(237, 232, 232, 0.57),
-                0 0.25rem 0.8rem rgb(123, 143, 202);
+                0 0.25rem 0.8rem rgba(123, 143, 202, 0.564);
     }
 }
 
@@ -484,11 +484,14 @@ hr {
 
 .profile-sidebar .sidebar-item {
     display: block;
-    padding: 10px 15px;
+    margin-top: 30px;
+    padding: 15px 0 15px 0;
     color: var(--clr-text-default);
     text-decoration: none;
     transition: background-color 0.2s ease;
     border-radius: 20px;
+    border: none;   
+    background: transparent;
 }
 
 .profile-sidebar .sidebar-item:hover {
@@ -496,11 +499,13 @@ hr {
 }
 
 .profile-sidebar .sidebar-item i {
-    width: 25px; /* Pro zarovnání ikon */
+    width:25px; /* Pro zarovnání ikon */
 }
 
-.profile-sidebar .logout-item {
-    color: var(--clr-danger); /* Červená barva pro odhlášení */
+.profile-sidebar .logout-item:hover {
+    color: var(--clr-danger);
+    background-color: #f8000034;
+    /* Červená barva pro odhlášení */
 }
 
 /* Překrytí pozadí */
@@ -569,7 +574,7 @@ hr {
 }
 
 .shadow-error {
-    box-shadow: 0 0.5rem 0.5rem rgb(205, 9, 9);
+    box-shadow: 0 0.5rem 0.5rem rgba(205, 9, 9, 0.564);
     transition: box-shadow 0.5s ease-in-out;
 }
 
@@ -652,7 +657,7 @@ body.dark-mode .card-circle-icons
 }
 
 .bg-circle-shadow-blue {
-    box-shadow: 0 0.25rem 0.3rem rgb(1, 164, 170);
+    box-shadow: 0 0.25rem 0.3rem rgba(1, 164, 170, 0.66);
 }
 
 .bg-circle-shadow-orange {
@@ -737,7 +742,7 @@ body.dark-mode .fa-truck-arrow-right:hover
 }
 body.dark-mode .animated-circle-orange:hover
 {
-    box-shadow: 0 1rem 1.5rem rgb(216, 104, 32);
+    box-shadow: 0 1rem 1.5rem rgba(216, 104, 32, 0.66);
 }
 
 #clock{
@@ -752,7 +757,7 @@ body.dark-mode .animated-circle-orange:hover
 }
 
 .card-circle.error-shadow {
-    box-shadow: 0 0 15px 5px rgb(246, 6, 6); /* Červený stín */
+    box-shadow: 0 0 15px 5px rgba(246, 6, 6, 0.66); /* Červený stín */
 }
 
 /*Pro graf v bublině */
@@ -846,7 +851,7 @@ body.dark-mode .text-cek {
     width: 100%;
     left: 50%;
     transform: translateX(-50%);
-    background-color: rgb(227, 175, 175);
+    background-color: rgba(227, 175, 175);
     color: #050001;
     padding: 25px;
     border: 1px solid #f6001d;
@@ -907,13 +912,13 @@ display: none;
 
 .dt-input
 {
-    text-size: 1.2rem;
+    font-size: 1.2rem;
 }
 
 .dt-input:hover
 {
     border: #f51d1d solid 2px;
-    box-shadow: 0 0 5px 0 rgba(0,0,0,.25);
+    box-shadow: 0 0 5px 0 rgba(0,0,0,0.25);
 }
 
 .dt-page-item:not(:first-child) .page-link
@@ -979,12 +984,12 @@ label[for="dt-length-0"]
 
 .dt-layout-start
 {
-    background-color: rgb(246, 248, 250);
+    background-color: rgba(246, 248, 250);
 }
 
 .dt-layout-cell
 {
-    background-color: rgb(246, 248, 250);
+    background-color: rgba(246, 248, 250);
 }
 
 /*styl pro modal podpisu o převzetí */
@@ -1087,7 +1092,7 @@ button.vydat, #confirmSignature {
 
 button.vydat:hover, #confirmSignature:hover {
     background-color: #45a049;
-    box-shadow: 0 2px 0 rgb(32, 36, 51);
+    box-shadow: 0 2px 0 rgba(32, 36, 51);
 }
 
 button.objednat {
@@ -1097,7 +1102,7 @@ button.objednat {
 
 button.objednat:hover {
     background-color: #fb8c00;
-    box-shadow: 0 2px 0 rgb(32, 36, 51);
+    box-shadow: 0 2px 0 rgba(32, 36, 51);
 }
 
 button.odstranit, #clearSignature, #closeSignature {
@@ -1107,7 +1112,7 @@ button.odstranit, #clearSignature, #closeSignature {
 
 button.odstranit:hover, #clearSignature:hover, #closeSignature:hover {
     background-color: #b51414;
-    box-shadow: 0 2px 0 rgb(32, 36, 51);
+    box-shadow: 0 2px 0 rgba(32, 36, 51);
     cursor: pointer;
 }
 
@@ -1262,8 +1267,6 @@ form#objednavka-form {
 }
 
 @media (max-width: 992px) {
-    .row.justify-content-center .col-md-6 {
-    }
     .row.justify-content-center .col-5 {
         order: 1;
         width: 100%;
@@ -1473,3 +1476,11 @@ form#objednavka-form {
 .notification-menu{
     padding: 0;
 }
+
+/* Skrytí badge notifikací při najetí myší na zvonek */
+#notificationDropdown:hover #notification-badge {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
