@@ -1,5 +1,5 @@
-// resources/js/lekarnicky.js - OPRAVENÁ VERZE
 import * as bootstrap from 'bootstrap';
+import Chart from 'chart.js/auto';
 
 export function lekarnicky() {
     console.log('Lékárničky modul inicializován');

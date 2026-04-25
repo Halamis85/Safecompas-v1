@@ -9,28 +9,22 @@ class PermissionMiddleware
 {
     public function handle(Request $request, Closure $next, $permission)
     {
-        if (!session('user')) {
+        $sessionUser = session('user');
+        if (!$sessionUser) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
             return redirect('/login');
         }
 
-        $user = \App\Models\User::find(session('user')['id']);
-
-        if (!$user || !$user->is_active) {
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'Account inactive'], 401);
-            }
-            return redirect('/login')->withErrors(['auth' => 'Uživatelský účet není aktivní']);
-        }
-
-        // Super admin má přístup ke všemu bez ohledu na konkrétní permission
-        if ($user->hasRole('super_admin')) {
+        // FIX V-11: Super admin bypass přes session - žádný DB query
+        if (!empty($sessionUser['is_super_admin'])) {
             return $next($request);
         }
 
-        if (!$user->hasPermission($permission)) {
+        // FIX V-11: Permissions už jsou v session od loginu
+        $permissions = $sessionUser['permissions'] ?? [];
+        if (!in_array($permission, $permissions, true)) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Nemáte oprávnění'], 403);
             }

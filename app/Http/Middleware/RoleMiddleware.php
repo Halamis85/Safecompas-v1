@@ -9,29 +9,21 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles)
     {
-        if (!session('user')) {
+        $sessionUser = session('user');
+        if (!$sessionUser) {
             if ($request->expectsJson()) {
                 return response()->json(['error' => 'Unauthorized'], 401);
             }
             return redirect('/login');
         }
 
-        $user = \App\Models\User::find(session('user')['id']);
-
-        if (!$user || !$user->is_active) {
-            if ($request->expectsJson()) {
-                return response()->json(['error' => 'Account inactive'], 401);
-            }
-            return redirect('/login')->withErrors(['auth' => 'Uživatelský účet není aktivní']);
-        }
-
-        // Super admin vždy projde
-        if ($user->hasRole('super_admin')) {
+        if (!empty($sessionUser['is_super_admin'])) {
             return $next($request);
         }
 
+        $userRoles = $sessionUser['roles'] ?? [];
         foreach ($roles as $role) {
-            if ($user->hasRole($role)) {
+            if (in_array($role, $userRoles, true)) {
                 return $next($request);
             }
         }

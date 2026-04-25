@@ -2,51 +2,82 @@
 <html lang="cs-cz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport"
-          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
-    <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <link rel="stylesheet" href="{{asset('css/style-admin.css')}}" type="text/css">
-    <title>Přihlášení</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="robots" content="noindex">
+    <title>Přihlášení – Safecompas</title>
+    @vite(['resources/css/app.css','resources/css/login.css', 'resources/js/app.js', 'resources/js/login.js'])
 </head>
-<body>
-<div class="row">
-    <div class="col-md-8 mx-auto p-0">
-        <div class="card border-0">
-            <div class="login-box border-0">
-                <div class="login-snip">
-                    <form method="POST" action="{{ url('/login') }}">
-                        @csrf
-                        <input id="tab-1" type="radio" name="tab" class="sign-in" checked>
-                        <label for="tab-1" class="tab"></label>
-                        <div class="login-space">
-                            <div class="group">
-                                <label for="username" class="label">Uživatelské jméno</label>
-                                <input id="username" name="username" type="text" class="input"
-                                       placeholder="Napiš uživatelské jméno" required>
-                            </div>
-                            <div class="group">
-                                <label for="password" class="label">Heslo</label>
-                                <input id="password" name="password" type="password" class="input"
-                                       placeholder="Zadej heslo" required>
-                            </div>
-                            @if($errors->any())
-                                <div class="alert alert-danger text-center mt-3" role="alert">
-                                    @foreach($errors->all() as $error)
-                                        {{ $error }}<br>
-                                    @endforeach
-                                </div>
-                            @endif
-                            <div class="hr"></div>
-                            <div class="group">
-                                <input type="submit" class="button" value="Přihlásit se">
-                            </div>
-                        </div>
-                    </form>
+<body class="login-page">
+
+<main class="login-wrap">
+    <section class="login-card" aria-labelledby="login-heading">
+        <div class="login-brand">
+            <img src="{{ asset('images/img.png') }}" alt="" width="64" height="64">
+            <h1 id="login-heading">Safecompas</h1>
+            <p class="text-muted">Přihlášení do aplikace</p>
+        </div>
+
+        <form method="POST" action="{{ url('/login') }}" novalidate>
+            @csrf
+
+            <div class="form-group">
+                <label for="username">Uživatelské jméno</label>
+                <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    class="form-control"
+                    autocomplete="username"
+                    autocapitalize="off"
+                    autocorrect="off"
+                    spellcheck="false"
+                    value="{{ old('username') }}"
+                    required
+                    autofocus>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Heslo</label>
+                <div class="input-with-toggle">
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        class="form-control"
+                        autocomplete="current-password"
+                        required>
+                    <button type="button" class="toggle-password" aria-label="Zobrazit heslo">
+                        <i class="fa fa-eye"></i>
+                    </button>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
+
+            @if($errors->any())
+                <div class="alert alert-danger" role="alert">
+                    @foreach($errors->all() as $error)
+                        <div>{{ $error }}</div>
+                    @endforeach
+                </div>
+            @endif
+
+            @if(session('status'))
+                <div class="alert alert-success" role="alert">
+                    {{ session('status') }}
+                </div>
+            @endif
+
+            <button type="submit" class="btn-login">
+                <i class="fa fa-sign-in-alt"></i> Přihlásit se
+            </button>
+
+            {{-- Self-service password reset --}}
+            <div class="forgot-link">
+                <a href="{{ route('password.forgot') }}">Zapomněli jste heslo?</a>
+            </div>
+        </form>
+    </section>
+</main>
+
 </body>
 </html>
-

@@ -9,6 +9,7 @@ use App\Models\UserActivity;
 use App\Notifications\LoginReset;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use App\Http\Requests\StoreUserRequest;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\RateLimiter;
@@ -70,32 +71,9 @@ class UserController extends Controller
     /**
      * Vytvoření nového uživatele s RBAC rolí.
      */
-    public function store(Request $request): JsonResponse
+    public function store(StoreUserRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'firstname' => 'required|string|max:255',
-            'lastname'  => 'required|string|max:255',
-            'email'     => 'required|email:rfc,dns|max:255|unique:users,email',
-            'username'  => 'required|string|min:3|max:50|alpha_dash|unique:users,username',
-            'password'  => 'required|string|min:8|max:255',
-            'role'      => 'required|string|exists:roles,name',
-            'alias'     => 'nullable|string|max:50',
-        ], [
-            'firstname.required' => 'Jméno je povinné.',
-            'lastname.required'  => 'Příjmení je povinné.',
-            'email.required'     => 'E-mail je povinný.',
-            'email.email'        => 'E-mail nemá platný formát.',
-            'email.unique'       => 'Tento e-mail je již zaregistrován.',
-            'username.required'  => 'Uživatelské jméno je povinné.',
-            'username.min'       => 'Uživatelské jméno musí mít alespoň 3 znaky.',
-            'username.alpha_dash'=> 'Uživatelské jméno může obsahovat pouze písmena, číslice, pomlčky a podtržítka.',
-            'username.unique'    => 'Toto uživatelské jméno je již obsazeno.',
-            'password.required'  => 'Heslo je povinné.',
-            'password.min'       => 'Heslo musí mít alespoň 8 znaků.',
-            'password.max'       => 'Heslo je příliš dlouhé (max. 255 znaků).',
-            'role.required'      => 'Role je povinná.',
-            'role.exists'        => 'Vybraná role neexistuje v systému.',
-        ]);
+        $validated = $request->validated();
 
         if ($validated['role'] === 'super_admin' && !session('user.is_super_admin')) {
             return response()->json([

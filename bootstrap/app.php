@@ -1,5 +1,4 @@
 <?php
-// bootstrap/app.php
 
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -12,7 +11,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Registrace custom middleware
+        $middleware->web(append: [
+            \App\Http\Middleware\SecurityHeaders::class,
+        ]);
+
+        // Aliasy pro routing
         $middleware->alias([
             'custom.auth'      => \App\Http\Middleware\CustomAuth::class,
             'role'             => \App\Http\Middleware\RoleMiddleware::class,
@@ -21,5 +24,6 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // Pokud chcete custom error pages, nemusíte sem sahat -
+        // stačí vytvořit resources/views/errors/{404,403,500}.blade.php
     })->create();

@@ -240,8 +240,9 @@ async function handleFetchResponse(response) {
                         row.insertCell().textContent = order.datum_vydani;
                         const podpisCell = row.insertCell();
                         podpisCell.innerHTML = order.podpis_path
-                            ? `<img src="/images/signatures/${order.podpis_path}" alt="Podpis" style="max-height: 80px;">`
+                            ? '<img src="/signatures/' + order.podpis_path + '" alt="Podpis" style="max-height: 80px;" loading="lazy">'
                             : '';
+
                     });
                     console.log("Data vložena do tabulky.");
 

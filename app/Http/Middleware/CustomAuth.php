@@ -46,14 +46,6 @@ class CustomAuth
 
         // Refresh activity timestamp
         session(['last_activity' => time()]);
-
-        // Aktualizace last_login pouze jednou za 5 minut (optimalizace)
-        $lastLoginUpdate = session('last_login_updated', 0);
-        if ((time() - $lastLoginUpdate) > 300) { // 5 minut
-            $user->update(['last_login' => now()]);
-            session(['last_login_updated' => time()]);
-        }
-
         return $next($request);
     }
 }

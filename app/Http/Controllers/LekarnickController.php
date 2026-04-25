@@ -10,6 +10,13 @@ use App\Models\VydejMaterialu;
 use App\Models\Zamestnanec;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use App\Http\Requests\StoreLekarnickyRequest;
+use App\Http\Requests\UpdateLekarnickyRequest;
+use App\Http\Requests\StoreMaterialRequest;
+use App\Http\Requests\UpdateMaterialRequest;
+use App\Http\Requests\StoreUrazRequest;
+use App\Http\Requests\VydejMaterialRequest;
 
 class LekarnickController extends Controller
 {
@@ -23,28 +30,46 @@ class LekarnickController extends Controller
     }
     public function dashboard()
     {
-        $lekarnicke = Lekarnicky::with(['material', 'urazy'])->get();
+        // Místo iterace přes N lékárniček a volání accessoru pro každou
+        // jdou všechny statistiky 4 agregačními dotazy.
+        $now = now();
+        $expirationLimit = $now->copy()->addDays(config('lekarnicke.material_expiration_warn_days', 30));
+        $kontrolaLimit   = $now->copy()->addDays(config('lekarnicke.kontrola_warn_days', 7));
 
-        $statistiky = [
-            'celkem_lekarnicek' => $lekarnicke->count(),
-            'aktivni_lekarnicke' => $lekarnicke->where('status', 'aktivni')->count(),
-            'expirujici_material' => 0,
-            'nizky_stav_material' => 0,
-            'potreba_kontroly' => 0,
-            'urazy_tento_mesic' => Uraz::whereMonth('datum_cas_urazu', now()->month)->count()
-        ];
+        // 1) Lékárničky - počet a aktivní
+        $lekarnicke = Lekarnicky::select('id', 'status', 'dalsi_kontrola')->get();
 
-        foreach($lekarnicke as $lekarnicky) {
-            $statistiky['expirujici_material'] += $lekarnicky->expirujici_material->count();
-            $statistiky['nizky_stav_material'] += $lekarnicky->nizky_stav_material->count();
-            if($lekarnicky->je_potreba_kontrola) {
-                $statistiky['potreba_kontroly']++;
-            }
-        }
+        // 2) Materiál - dva dotazy nad celou tabulkou (cca 1 ms i pro 100k řádků s indexy)
+        $expirujici = LekarnickeMaterial::query()
+            ->whereNotNull('datum_expirace')
+            ->where('datum_expirace', '>=', $now)
+            ->where('datum_expirace', '<=', $expirationLimit)
+            ->count();
+
+        $nizkyStav = LekarnickeMaterial::query()
+            ->whereColumn('aktualni_pocet', '<=', 'minimalni_pocet')
+            ->count();
+
+        // 3) Kontroly - lékárničky které potřebují kontrolu
+        $potrebaKontroly = $lekarnicke
+            ->filter(fn($l) => $l->dalsi_kontrola && $l->dalsi_kontrola <= $kontrolaLimit)
+            ->count();
+
+        // 4) Úrazy tento měsíc
+        $urazyMesic = Uraz::whereYear('datum_cas_urazu', $now->year)
+            ->whereMonth('datum_cas_urazu', $now->month)
+            ->count();
 
         return response()->json([
             'lekarnicke' => $lekarnicke,
-            'statistiky' => $statistiky
+            'statistiky' => [
+            'celkem_lekarnicek'   => $lekarnicke->count(),
+            'aktivni_lekarnicke'  => $lekarnicke->where('status', 'aktivni')->count(),
+            'expirujici_material' => $expirujici,
+            'nizky_stav_material' => $nizkyStav,
+            'potreba_kontroly'    => $potrebaKontroly,
+            'urazy_tento_mesic'   => $urazyMesic,
+            ],
         ]);
     }
 
@@ -99,22 +124,14 @@ class LekarnickController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(StoreLekarnickyRequest $request)
     {
-        $request->validate([
-            'nazev' => 'required|string|max:255',
-            'umisteni' => 'required|string|max:255',
-            'zodpovedna_osoba' => 'required|string|max:255',
-            'popis' => 'nullable|string',
-            'dalsi_kontrola' => 'nullable|date'
-        ]);
-
-        $lekarnicky = Lekarnicky::create($request->all());
+        $lekarnicky = \App\Models\Lekarnicky::create($request->validated());
 
         return response()->json([
-            'success' => true,
+            'success'    => true,
             'lekarnicky' => $lekarnicky,
-            'message' => 'Lékárnička byla úspěšně vytvořena'
+            'message'    => 'Lékárnička byla úspěšně vytvořena',
         ]);
     }
 
@@ -125,17 +142,11 @@ class LekarnickController extends Controller
         return response()->json($lekarnicky);
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateLekarnickyRequest $request, $id)
     {
         $lekarnicky = Lekarnicky::findOrFail($id);
 
-        $request->validate([
-            'nazev' => 'required|string|max:255',
-            'umisteni' => 'required|string|max:255',
-            'zodpovedna_osoba' => 'required|string|max:255'
-        ]);
-
-        $lekarnicky->update($request->all());
+        $lekarnicky->update($request->validated());
 
         return response()->json([
             'success' => true,
@@ -156,35 +167,47 @@ class LekarnickController extends Controller
     }
 
     // Správa materiálu
-    public function storeMaterial(Request $request, $lekarnicky_id)
+    public function storeMaterial(\Illuminate\Http\Request $request, $lekarnicky_id)
     {
-        $request->validate([
-            'nazev_materialu' => 'required|string|max:255',
-            'typ_materialu' => 'required|string|max:255',
-            'aktualni_pocet' => 'required|integer|min:0',
-            'minimalni_pocet' => 'required|integer|min:0',
-            'maximalni_pocet' => 'required|integer|min:1',
-            'jednotka' => 'required|string|max:50',
-            'datum_expirace' => 'nullable|date',
-            'cena_za_jednotku' => 'nullable|numeric|min:0'
+        // FIX V-08: Explicit kontrola, že lékárnička existuje
+        if (!Lekarnicky::where('id', $lekarnicky_id)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lékárnička nenalezena.',
+            ], 404);
+        }
+        $validated = $request->validate([
+            'nazev_materialu'   => 'required|string|max:255',
+            'typ_materialu'     => 'required|string|max:255',
+            'aktualni_pocet'    => 'required|integer|min:0',
+            'minimalni_pocet'   => 'required|integer|min:0',
+            'maximalni_pocet'   => 'required|integer|min:1|gte:minimalni_pocet',
+            'jednotka'          => 'required|string|max:50',
+            'datum_expirace'    => 'nullable|date|after:today',
+            'cena_za_jednotku'  => 'nullable|numeric|min:0|max:999999',
+            'dodavatel'         => 'nullable|string|max:255',
+            'poznamky'          => 'nullable|string|max:5000',
+        ], [
+            'maximalni_pocet.gte'   => 'Maximální počet musí být >= minimální počet.',
+            'datum_expirace.after'  => 'Datum expirace musí být v budoucnosti.',
         ]);
 
-        $material = LekarnickeMaterial::create([
-            'lekarnicky_id' => $lekarnicky_id,
-            ...$request->all()
-        ]);
+        $material = LekarnickeMaterial::create(array_merge(
+            $validated,
+            ['lekarnicky_id' => $lekarnicky_id]   // bezpečně - whitelisted z URL
+        ));
 
         return response()->json([
-            'success' => true,
+            'success'  => true,
             'material' => $material,
-            'message' => 'Materiál byl přidán'
+            'message'  => 'Materiál byl přidán',
         ]);
     }
 
-    public function updateMaterial(Request $request, $material_id)
+    public function updateMaterial(UpdateMaterialRequest $request, $material_id)
     {
         $material = LekarnickeMaterial::findOrFail($material_id);
-        $material->update($request->all());
+        $material->update($request->validated());
 
         return response()->json([
             'success' => true,
@@ -208,7 +231,7 @@ class LekarnickController extends Controller
  */
     public function getZamestnanci()
     {
-        $zamestnanci = \App\Models\Zamestnanec::select('id', 'jmeno', 'prijmeni', 'stredisko')
+        $zamestnanci = Zamestnanec::select('id', 'jmeno', 'prijmeni', 'stredisko')
             ->orderBy('prijmeni')
             ->orderBy('jmeno')
             ->get();
@@ -216,25 +239,30 @@ class LekarnickController extends Controller
     return response()->json($zamestnanci);
     }
     // Záznamy úrazů
-    public function storeUraz(Request $request)
+    public function storeUraz(\Illuminate\Http\Request $request)
     {
-        $request->validate([
-            'zamestnanec_id' => 'required|exists:zamestnanci,id',
-            'lekarnicky_id' => 'required|exists:lekarnicke,id',
-            'datum_cas_urazu' => 'required|date',
-            'popis_urazu' => 'required|string',
-            'misto_urazu' => 'required|string|max:255',
-            'zavaznost' => 'required|in:lehky,stredni,tezky',
-            'poskytnute_osetreni' => 'required|string',
-            'osoba_poskytujici_pomoc' => 'required|string|max:255'
+        $validated = $request->validate([
+            'zamestnanec_id'         => 'required|exists:zamestnanci,id',
+            'lekarnicky_id'          => 'required|exists:lekarnicke,id',
+            'datum_cas_urazu'        => 'required|date|before_or_equal:now',
+            'popis_urazu'            => 'required|string|min:10|max:5000',
+            'misto_urazu'            => 'required|string|max:255',
+            'zavaznost'              => 'required|in:lehky,stredni,tezky',
+            'poskytnute_osetreni'    => 'required|string|min:5|max:5000',
+            'osoba_poskytujici_pomoc'=> 'required|string|max:255',
+            'prevezen_do_nemocnice'  => 'sometimes|boolean',
+            'poznamky'               => 'nullable|string|max:5000',
+        ], [
+            'datum_cas_urazu.before_or_equal' => 'Datum úrazu nemůže být v budoucnosti.',
+            'popis_urazu.min'                 => 'Popis úrazu je příliš krátký (min. 10 znaků).',
         ]);
 
-        $uraz = Uraz::create($request->all());
+        $uraz = \App\Models\Uraz::create($validated);
 
         return response()->json([
             'success' => true,
-            'uraz' => $uraz->load(['zamestnanec', 'lekarnicky']),
-            'message' => 'Záznam o úrazu byl vytvořen'
+            'uraz'    => $uraz->load(['zamestnanec', 'lekarnicky']),
+            'message' => 'Záznam o úrazu byl vytvořen',
         ]);
     }
 
@@ -265,45 +293,39 @@ class LekarnickController extends Controller
     }
 
     // Výdej materiálu
-    public function vydejMaterial(Request $request)
+    public function vydejMaterial(VydejMaterialRequest $request)
     {
-        $request->validate([
-            'uraz_id' => 'required|exists:urazy,id',
-            'material_id' => 'required|exists:lekarnicky_material,id',
-            'vydane_mnozstvi' => 'required|integer|min:1',
-            'osoba_vydavajici' => 'required|string|max:255'
-        ]);
+        $validated = $request->validated();
 
-        $material = LekarnickeMaterial::findOrFail($request->material_id);
+        return DB::transaction(function () use ($validated, $request) {
+            // Lock řádku materiálu - žádný jiný request neudělá souběžný update
+            $material = LekarnickeMaterial::lockForUpdate()->findOrFail($validated['material_id']);
 
-        // Kontrola dostupnosti
-        if ($material->aktualni_pocet < $request->vydane_mnozstvi) {
+            if ($material->aktualni_pocet < $validated['vydane_mnozstvi']) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Nedostatek materiálu na skladě (k dispozici: ' . $material->aktualni_pocet . ').',
+                ], 400);
+            }
+
+            $vydej = VydejMaterialu::create([
+                'uraz_id'           => $validated['uraz_id'],
+                'material_id'       => $validated['material_id'],
+                'vydane_mnozstvi'   => $validated['vydane_mnozstvi'],
+                'jednotka'          => $material->jednotka,
+                'datum_vydeje'      => now(),
+                'osoba_vydavajici'  => $validated['osoba_vydavajici'],
+                'poznamky'          => $request->input('poznamky'),
+            ]);
+
+            $material->decrement('aktualni_pocet', $validated['vydane_mnozstvi']);
+
             return response()->json([
-                'success' => false,
-                'message' => 'Nedostatek materiálu na skladě'
-            ], 400);
-        }
-
-        // Vytvoření záznamu o výdeji
-        $vydej = VydejMaterialu::create([
-            'uraz_id' => $request->uraz_id,
-            'material_id' => $request->material_id,
-            'vydane_mnozstvi' => $request->vydane_mnozstvi,
-            'jednotka' => $material->jednotka,
-            'datum_vydeje' => now(),
-            'osoba_vydavajici' => $request->osoba_vydavajici,
-            'poznamky' => $request->poznamky
-        ]);
-
-        // Aktualizace stavu materiálu
-        $material->aktualni_pocet -= $request->vydane_mnozstvi;
-        $material->save();
-
-        return response()->json([
-            'success' => true,
-            'vydej' => $vydej->load(['uraz', 'material']),
-            'message' => 'Materiál byl vydán a stav aktualizován'
-        ]);
+                'success' => true,
+                'vydej'   => $vydej->load(['uraz', 'material']),
+                'message' => 'Materiál byl vydán a stav aktualizován',
+            ]);
+        }); 
     }
 
     // Kontrola lékárničky

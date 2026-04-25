@@ -1,6 +1,5 @@
-import {Chart, registerables} from 'chart.js';
+import Chart from 'chart.js/auto';
 
-Chart.register(...registerables);
 
 function statik() {
 

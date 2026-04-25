@@ -1,7 +1,4 @@
 <?php
-
-// app/Http/Controllers/NotificationController.php
-
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
@@ -11,48 +8,40 @@ class NotificationController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $user = auth()->user() ?? $this->getCurrentUser();
-
+        $user = $this->currentUser();
         if (!$user) {
-            return response()->json(['notifications' => []]);
+            return response()->json(['notifications' => [], 'unread_count' => 0]);
         }
 
         $notifications = $user->notifications()
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
+            ->orderByDesc('created_at')
+            ->limit(20)
             ->get()
-            ->map(function ($notification) {
-                return [
-                    'id' => $notification->id,
-                    'type' => class_basename($notification->type),
-                    'data' => $notification->data,
-                    'read_at' => $notification->read_at,
-                    'created_at' => $notification->created_at->diffForHumans(),
-                    'created_at_full' => $notification->created_at->format('d.m.Y H:i')
-                ];
-            });
+            ->map(fn($n) => [
+                'id'              => $n->id,
+                'type'            => class_basename($n->type),
+                'data'            => $n->data,
+                'read_at'         => $n->read_at,
+                'created_at'      => $n->created_at->diffForHumans(),
+                'created_at_full' => $n->created_at->format('d.m.Y H:i'),
+            ]);
 
         return response()->json([
             'notifications' => $notifications,
-            'unread_count' => $user->unreadNotifications()->count()
+            'unread_count'  => $user->unreadNotifications()->count(),
         ]);
     }
 
     public function markAsRead(Request $request): JsonResponse
     {
-        $user = auth()->user() ?? $this->getCurrentUser();
-
+        $user = $this->currentUser();
         if (!$user) {
-            return response()->json(['success' => false]);
+            return response()->json(['success' => false], 401);
         }
 
         if ($request->has('id')) {
-            // Označit konkrétní notifikaci
-            $user->notifications()
-                ->where('id', $request->id)
-                ->update(['read_at' => now()]);
+            $user->notifications()->where('id', $request->id)->update(['read_at' => now()]);
         } else {
-            // Označit všechny jako přečtené
             $user->unreadNotifications->markAsRead();
         }
 
@@ -61,24 +50,24 @@ class NotificationController extends Controller
 
     public function markAllAsRead(): JsonResponse
     {
-        $user = auth()->user() ?? $this->getCurrentUser();
-
+        $user = $this->currentUser();
         if (!$user) {
-            return response()->json(['success' => false]);
+            return response()->json(['success' => false], 401);
         }
 
         $user->unreadNotifications->markAsRead();
-
         return response()->json(['success' => true]);
     }
 
-    // Helper pro získání současného uživatele ze session
-    private function getCurrentUser()
+    /**
+     * Získá uživatele ze session (vlastní auth v této aplikaci).
+     */
+    private function currentUser(): ?\App\Models\User
     {
         $sessionUser = session('user');
-        if ($sessionUser && isset($sessionUser['id'])) {
-            return \App\Models\User::find($sessionUser['id']);
+        if (!$sessionUser || !isset($sessionUser['id'])) {
+            return null;
         }
-        return null;
+        return \App\Models\User::find($sessionUser['id']);
     }
 }

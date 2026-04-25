@@ -1,0 +1,61 @@
+<?php
+// app/Http/Requests/StoreLekarnickyRequest.php
+// FIX V-07: FormRequest pro vytvoření lékárničky
+// Vytvořte podobné třídy pro: Update, StoreMaterial, UpdateMaterial,
+// StoreUraz, VydejMaterial, StoreUser
+
+namespace App\Http\Requests;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class StoreLekarnickyRequest extends FormRequest
+{
+    /**
+     * Authorization je v middleware (permission:lekarnicke.create),
+     * tady se opakuje pro jistotu při unit testech.
+     */
+    public function authorize(): bool
+    {
+        $perms = session('user.permissions', []);
+        return in_array('lekarnicke.create', $perms)
+            || session('user.is_super_admin') === true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'nazev'             => 'required|string|max:255',
+            'umisteni'          => 'required|string|max:255',
+            'zodpovedna_osoba'  => 'required|string|max:255',
+            'popis'             => 'nullable|string|max:5000',
+            'status'            => 'sometimes|in:aktivni,neaktivni',
+            'dalsi_kontrola'    => 'nullable|date|after_or_equal:today',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'nazev.required'           => 'Název lékárničky je povinný.',
+            'umisteni.required'        => 'Umístění je povinné.',
+            'zodpovedna_osoba.required'=> 'Zodpovědná osoba je povinná.',
+            'dalsi_kontrola.after_or_equal' => 'Datum kontroly nemůže být v minulosti.',
+        ];
+    }
+}
+
+
+// === Použití v controlleru: ===
+// app/Http/Controllers/LekarnickController.php
+
+// Místo:
+//   public function store(Request $request) {
+//       $request->validate([...]);
+//       ...
+//   }
+
+// Použijte:
+
+
+
+
