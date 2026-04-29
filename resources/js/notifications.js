@@ -1,9 +1,19 @@
+// resources/js/notifications.js
+// Zvonek s notifikacemi pro každého přihlášeného uživatele.
+// Notifikace jsou per-user (každý vidí jen vlastní).
+
 class NotificationBell {
     constructor() {
-        this.container = document.getElementById('notifications-container');
-        this.badge = document.getElementById('notification-badge');
-        this.markAllBtn = document.getElementById('mark-all-read');
-        this.loadingEl = document.getElementById('loading-notifications');
+        this.container   = document.getElementById('notifications-container');
+        this.badge       = document.getElementById('notification-badge');
+        this.markAllBtn  = document.getElementById('mark-all-read');
+        this.loadingEl   = document.getElementById('loading-notifications');
+
+        const csrfMeta   = document.querySelector('meta[name="csrf-token"]');
+        this.csrfToken   = csrfMeta ? csrfMeta.getAttribute('content') : '';
+
+        this.intervalId  = null;
+        this.stopped     = false;
 
         this.init();
     }
@@ -11,58 +21,94 @@ class NotificationBell {
     init() {
         this.loadNotifications();
         this.setupEventListeners();
+        this.intervalId = setInterval(() => this.loadNotifications(), 30_000);
+    }
 
-        // Auto refresh každých 30 sekund
-        setInterval(() => {
-            this.loadNotifications();
-        }, 30000);
+    stop() {
+        this.stopped = true;
+        if (this.intervalId) {
+            clearInterval(this.intervalId);
+            this.intervalId = null;
+        }
+    }
+
+    hideBell() {
+        const dropdown = document.querySelector('.notification-dropdown');
+        if (dropdown) dropdown.style.display = 'none';
     }
 
     setupEventListeners() {
-        // Mark all as read
         if (this.markAllBtn) {
-            this.markAllBtn.addEventListener('click', () => {
-                this.markAllAsRead();
-            });
+            this.markAllBtn.addEventListener('click', () => this.markAllAsRead());
         }
-
-        // Refresh při otevření dropdown
         const dropdown = document.getElementById('notificationDropdown');
         if (dropdown) {
-            dropdown.addEventListener('shown.bs.dropdown', () => {
-                this.loadNotifications();
-            });
+            dropdown.addEventListener('shown.bs.dropdown', () => this.loadNotifications());
         }
     }
 
     async loadNotifications() {
+        if (this.stopped) return;
+
+        let response;
         try {
-            const response = await fetch('/notifications', {
+            response = await fetch('/notifications', {
                 headers: {
                     'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
             });
-
-            if (!response.ok) {
-                throw new Error('Failed to load notifications');
-            }
-
-            const data = await response.json();
-            this.renderNotifications(data.notifications);
-            this.updateBadge(data.unread_count);
-
         } catch (error) {
-            console.error('Error loading notifications:', error);
-            this.showError();
+            return;
         }
+
+        if (response.status === 401) {
+            this.stop();
+            return;
+        }
+
+        if (response.status === 403) {
+            this.stop();
+            this.hideBell();
+            return;
+        }
+
+        if (!response.ok) {
+            this.showError();
+            return;
+        }
+
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            this.showError();
+            return;
+        }
+
+        this.renderNotifications(data.notifications || []);
+        this.updateBadge(data.unread_count || 0);
+    }
+
+    /**
+     * Render media slot - obrázek pokud existuje (pro OOPP),
+     * jinak Font Awesome ikona (pro lékárničky).
+     */
+    renderMedia(data) {
+        if (data.img) {
+            return `<img src="/images/OOPP/${encodeURIComponent(data.img)}" alt="" class="rounded-circle produck-circle-notific" style="width: 50px; height: 50px; object-fit: contain;">`;
+        }
+        const icon = data.icon || 'fa-solid fa-bell';
+        return `
+            <div class="notification-fa-icon rounded-circle produck-circle-notific d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                <i class="${this.escape(icon)} fa-lg"></i>
+            </div>
+        `;
     }
 
     renderNotifications(notifications) {
-        if (this.loadingEl) {
-            this.loadingEl.style.display = 'none';
-        }
-
+        if (this.loadingEl) this.loadingEl.style.display = 'none';
         if (!this.container) return;
 
         if (notifications.length === 0) {
@@ -75,26 +121,32 @@ class NotificationBell {
             return;
         }
 
-        const notificationsHtml = notifications.map(notification => {
+        const html = notifications.map(notification => {
             const isUnread = !notification.read_at;
-            const data = notification.data;
+            const data     = notification.data || {};
+            const color    = data.color || '';
+            const message  = this.escape(data.message || '');
+            const empName  = this.escape(data.employee_name || '');
+            const prodName = this.escape(data.product_name || '');
+            const size     = this.escape(data.size || '');
+            const media    = this.renderMedia(data);
 
             return `
                 <div class="notification-item ${isUnread ? 'unread' : 'read'}"
                      data-id="${notification.id}"
                      onclick="notificationBell.markAsRead('${notification.id}')">
                     <div class="d-flex">
-                        <div class="notification-icon${data.color}">
-                            <img src="/images/OOPP/${data.img}" alt="Produkt obrazek" class="rounded-circle produck-circle-notific" style="width: 50px; height: 50px; object-fit: contain;">
+                        <div class="notification-icon${color}">
+                            ${media}
                         </div>
                         <div class="flex-grow-1">
                             <div class="notification-content">
-                                <strong class="fs-8">${data.message}</strong><br>
-                                <small>${data.employee_name}</small><br>
-                                <small class="text-muted">${data.product_name} (${data.size})</small>
+                                <strong class="fs-8">${message}</strong><br>
+                                <small>${empName}</small><br>
+                                <small class="text-muted">${prodName}${size ? ' (' + size + ')' : ''}</small>
                             </div>
                             <div class="notification-time mt-1">
-                                <i class="fas fa-clock"></i> ${notification.created_at}
+                                <i class="fas fa-clock"></i> ${this.escape(notification.created_at || '')}
                             </div>
                         </div>
                         ${isUnread ? '<div class="text-primary"><i class="fas fa-circle" style="font-size: 8px;"></i></div>' : ''}
@@ -103,12 +155,17 @@ class NotificationBell {
             `;
         }).join('');
 
-        this.container.innerHTML = notificationsHtml;
+        this.container.innerHTML = html;
+    }
+
+    escape(str) {
+        const div = document.createElement('div');
+        div.textContent = String(str);
+        return div.innerHTML;
     }
 
     updateBadge(count) {
         if (!this.badge) return;
-
         if (count > 0) {
             this.badge.textContent = count > 99 ? '99+' : count;
             this.badge.style.display = 'block';
@@ -123,17 +180,16 @@ class NotificationBell {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json'
+                    'X-CSRF-TOKEN': this.csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
                 },
-                body: JSON.stringify({ id: notificationId })
+                credentials: 'same-origin',
+                body: JSON.stringify({ id: notificationId }),
             });
-
-            if (response.ok) {
-                this.loadNotifications();
-            }
+            if (response.ok) this.loadNotifications();
         } catch (error) {
-            console.error('Error marking notification as read:', error);
+            // tiché
         }
     }
 
@@ -142,16 +198,15 @@ class NotificationBell {
             const response = await fetch('/notifications/mark-all-read', {
                 method: 'POST',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json'
-                }
+                    'X-CSRF-TOKEN': this.csrfToken,
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
             });
-
-            if (response.ok) {
-                this.loadNotifications();
-            }
+            if (response.ok) this.loadNotifications();
         } catch (error) {
-            console.error('Error marking all notifications as read:', error);
+            // tiché
         }
     }
 
@@ -167,7 +222,12 @@ class NotificationBell {
     }
 }
 
-// Inicializace po načtení stránky
-document.addEventListener('DOMContentLoaded', function() {
-    window.notificationBell = new NotificationBell();
+document.addEventListener('DOMContentLoaded', function () {
+    const userMeta   = document.querySelector('meta[name="user-authenticated"]');
+    const isAuth     = userMeta && userMeta.content === 'true';
+    const bellExists = document.getElementById('notifications-container') !== null;
+
+    if (isAuth && bellExists) {
+        window.notificationBell = new NotificationBell();
+    }
 });

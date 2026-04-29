@@ -1,92 +1,122 @@
-// Automatické session management
+// Periodická kontrola platnosti relace + varování před vypršením.
+
 export function sessionManager() {
-    console.log('Session Manager inicializován');
-class SessionManager {
-    constructor() {
-        this.warningShown = false;
-        this.checkInterval = 60000; // Kontrola každou minutu
-        this.warningTime = 300; // Varování 5 minut před vypršením
-
-        this.startSessionCheck();
+    const userMeta = document.querySelector('meta[name="user-authenticated"]');
+    if (!userMeta || userMeta.content !== 'true') {
+        return;
     }
 
-    startSessionCheck() {
-        setInterval(() => {
-            this.checkSession();
-        }, this.checkInterval);
+    const csrfMeta = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfMeta) {
+        return;
+    }
+    const csrfToken = csrfMeta.getAttribute('content');
+
+    const CHECK_INTERVAL_MS = 60_000;   // kontrola každou minutu
+    const WARNING_SECONDS   = 300;      // varování 5 minut před vypršením
+
+    let warningShown = false;
+    let stopped = false;
+    let intervalId = null;
+
+    function stop() {
+        stopped = true;
+        if (intervalId) {
+            clearInterval(intervalId);
+            intervalId = null;
+        }
     }
 
-    async checkSession() {
+    async function checkSession() {
+        if (stopped) return;
+
+        let response;
         try {
-            const response = await fetch('/check-session', {
+            response = await fetch('/check-session', {
                 method: 'GET',
                 headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                credentials: 'same-origin',
             });
+        } catch (e) {
+            // Síťová chyba - tiše ignorovat, zkusíme příště
+            return;
+        }
 
-            const data = await response.json();
+        if (response.status === 401) {
+            stop();
+            window.location.href = '/login';
+            return;
+        }
 
-            if (!data.authenticated) {
-                if (data.reason === 'timeout') {
-                    alert('Vaše relace vypršela z důvodu nečinnosti. Budete přesměrováni na přihlášení.');
-                }
-                window.location.href = '/login';
-                return;
+        if (!response.ok) {
+            return;
+        }
+
+        // Pojistka - server nesmí vrátit HTML, ale kdyby ano, neházet syntax error
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            return;
+        }
+
+        let data;
+        try {
+            data = await response.json();
+        } catch (e) {
+            return;
+        }
+
+        if (!data.authenticated) {
+            stop();
+            window.location.href = '/login';
+            return;
+        }
+
+        // Backend vrací 'remaining_seconds'
+        const remaining = typeof data.remaining_seconds === 'number'
+            ? data.remaining_seconds
+            : Number.POSITIVE_INFINITY;
+
+        if (remaining <= WARNING_SECONDS && !warningShown) {
+            warningShown = true;
+            const minutes = Math.max(1, Math.floor(remaining / 60));
+            const extend = confirm(
+                `Vaše relace vyprší za ${minutes} minut. Chcete ji prodloužit?`
+            );
+            if (extend) {
+                extendSession();
             }
+        }
 
-            // Varování před vypršením
-            if (data.remaining_time <= this.warningTime && !this.warningShown) {
-                this.showSessionWarning(data.remaining_time);
-            }
-
-            // Reset varování pokud je session obnovena
-            if (data.remaining_time > this.warningTime) {
-                this.warningShown = false;
-            }
-
-        } catch (error) {
-            console.error('Chyba při kontrole session:', error);
+        if (remaining > WARNING_SECONDS) {
+            warningShown = false;
         }
     }
 
-    showSessionWarning(remainingTime) {
-        this.warningShown = true;
-        const minutes = Math.floor(remainingTime / 60);
-
-        const extend = confirm(`Vaše relace vyprší za ${minutes} minut. Chcete ji prodloužit?`);
-
-        if (extend) {
-            this.extendSession();
-        }
-    }
-
-    async extendSession() {
+    async function extendSession() {
         try {
             const response = await fetch('/extend-session', {
                 method: 'POST',
                 headers: {
+                    'Accept': 'application/json',
                     'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
-                }
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': csrfToken,
+                },
+                credentials: 'same-origin',
             });
-
+            if (!response.ok) return;
             const data = await response.json();
-
-            if (data.success) {
-                this.warningShown = false;
-                // Můžete zobrazit toast notifikaci
-                console.log('Session prodloužena');
+            if (data && data.success) {
+                warningShown = false;
             }
-        } catch (error) {
-            console.error('Chyba při prodlužování session:', error);
+        } catch (e) {
+            // tiché
         }
     }
-}
 
-// Inicializace při načtení stránky
-    const userMeta = document.querySelector('meta[name="user-authenticated"]');
-    if (userMeta && userMeta.content === 'true') {
-        new SessionManager();
-    }
+    intervalId = setInterval(checkSession, CHECK_INTERVAL_MS);
 }

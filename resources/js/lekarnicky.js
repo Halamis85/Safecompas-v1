@@ -1,5 +1,7 @@
 import * as bootstrap from 'bootstrap';
 import Chart from 'chart.js/auto';
+import { initPlanBudovy } from './plan-budovy.js';
+
 
 export function lekarnicky() {
     console.log('Lékárničky modul inicializován');
@@ -18,28 +20,76 @@ export function lekarnicky() {
 
     // API helper funkce
     async function apiCall(url, options = {}) {
-        const defaultOptions = {
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken
-            }
+        // Vždy načítat aktuální CSRF token z DOMu (ne starý z proměnné).
+        // Pomáhá to, když Laravel token v průběhu sezení rotuje.
+        const currentCsrf = document.querySelector('meta[name="csrf-token"]')?.content
+            || csrfToken;
+
+        // Mergování headerů - aby šlo z volání přidat vlastní bez ztráty defaultů
+        const mergedHeaders = {
+            'Content-Type':     'application/json',
+            'Accept':           'application/json',         // ← KLÍČOVÉ: bez tohoto Laravel vrací HTML redirect
+            'X-Requested-With': 'XMLHttpRequest',           // další hint pro Laravel, že je to AJAX
+            'X-CSRF-TOKEN':     currentCsrf,
+            ...(options.headers || {}),
         };
 
+        const finalOptions = {
+            ...options,
+            headers: mergedHeaders,
+            credentials: 'same-origin',
+        };
+
+        let response;
         try {
-            const response = await fetch(url, { ...defaultOptions, ...options });
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.message || 'API chyba');
-            }
-
-            return data;
-        } catch (error) {
-            console.error('API Error:', error);
-            showNotification('Chyba při komunikaci se serverem: ' + error.message, 'error');
-            throw error;
+            response = await fetch(url, finalOptions);
+        } catch (networkError) {
+            // Síťová chyba (offline, server down)
+            console.error('API Network Error:', networkError);
+            showNotification('Nelze se připojit k serveru. Zkontrolujte připojení.', 'error');
+            throw networkError;
         }
+
+        // Session vypršela - přesměrovat na login
+        if (response.status === 401) {
+            showNotification('Vaše relace vypršela. Budete přesměrováni na přihlášení.', 'error');
+            setTimeout(() => { window.location.href = '/login'; }, 1500);
+            throw new Error('Session expired');
+        }
+
+        // CSRF token mismatch - obvykle expirovaný token, stačí refresh
+        if (response.status === 419) {
+            showNotification('Bezpečnostní token vypršel. Obnovte prosím stránku (Ctrl+R).', 'error');
+            throw new Error('CSRF token mismatch');
+        }
+
+        // Pojistka: pokud server omylem vrátí HTML (302 redirect následovaný HTML),
+        // čitelná chybová zpráva místo "Unexpected token '<'"
+        const contentType = response.headers.get('content-type') || '';
+        if (!contentType.includes('application/json')) {
+            console.error('API vrátilo ne-JSON response (content-type=' + contentType + ')');
+            showNotification('Server vrátil neočekávanou odpověď. Zkuste se znovu přihlásit.', 'error');
+            throw new Error('Unexpected response format');
+        }
+
+        let data;
+        try {
+            data = await response.json();
+        } catch (parseError) {
+            console.error('API Parse Error:', parseError);
+            showNotification('Server vrátil poškozenou odpověď.', 'error');
+            throw parseError;
+        }
+
+        if (!response.ok) {
+            const message = data.message || data.error || `API chyba (${response.status})`;
+            showNotification(message, 'error');
+            throw new Error(message);
+        }
+
+        return data;
     }
+
 
     // Načtení dashboardu
     async function loadDashboard() {
@@ -57,13 +107,29 @@ export function lekarnicky() {
 
             updateStats();
             showDashboard();
-            // loadCurrentSection(); // ODSTRANĚNO PRO ZABRÁNĚNÍ REKURZE
+            renderLekarnicke();
+            initOrRefreshPlan();
 
         } catch (error) {
             console.error('Chyba při načítání dashboard:', error);
             showNotification('Chyba při načítání dat', 'error');
         } finally {
             loadingIndicator.style.display = 'none';
+        }
+    }
+
+      // Plán budovy - inicializace jednou, pak se rerendruje při show.bs.modal
+    let planBudovy = null;
+    function initOrRefreshPlan() {
+        if (!planBudovy) {
+            planBudovy = initPlanBudovy({
+                apiCall,
+                showNotification,
+                getLekarnicky: () => appData.lekarnicke,
+                openDetailLekarnicky: window.viewLekarnicky,
+            });
+        } else if (planBudovy.rerender) {
+            planBudovy.rerender();
         }
     }
 
@@ -97,10 +163,21 @@ export function lekarnicky() {
     }
 
     // Zobrazení sekce
-    function showSection(section) {
+        function showSection(section) {
         appData.currentSection = section;
 
-        // Zobrazit vybranou sekci nebo otevřít modal
+        // Plán budovy - otevři modal
+        if (section === 'plan') {
+            const modalEl = document.getElementById('planBudovyModal');
+            if (!modalEl) return;
+            const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+            // Init pokud ještě nebyl
+            initOrRefreshPlan();
+            modal.show();
+            return;
+        }
+
+        // Materiál - modal
         if (section === 'material') {
             const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('materialModalList'));
             modal.show();
@@ -108,6 +185,7 @@ export function lekarnicky() {
             return;
         }
 
+        // Úrazy - modal
         if (section === 'urazy') {
             const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('urazyModalList'));
             modal.show();
@@ -115,50 +193,22 @@ export function lekarnicky() {
             return;
         }
 
+        // Výkazy - modal
         if (section === 'vykazy') {
             const modalElement = document.getElementById('vykazyModalList');
             const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
-            
-            // Grafy se musí inicializovat až když je modal viditelný
             modalElement.addEventListener('shown.bs.modal', function onShown() {
                 setupVykazy();
                 modalElement.removeEventListener('shown.bs.modal', onShown);
             }, { once: true });
-            
             modal.show();
             return;
         }
-
-        // Skrýt všechny sekce (pouze pokud přepínáme inline sekce)
-        document.querySelectorAll('.content-section').forEach(el => {
-            el.style.display = 'none';
-        });
-
-        const targetSection = document.getElementById(`section-${section}`);
-        if (targetSection) {
-            targetSection.style.display = 'block';
-        }
-
-        // Označit aktivní navigaci
-        document.querySelectorAll('.navigation-card').forEach(el => {
-            el.classList.remove('active');
-        });
-
-        const activeCard = document.querySelector(`[data-section="${section}"]`);
-        if (activeCard) {
-            activeCard.classList.add('active');
-        }
-
-        // Načíst data pro sekci
-        loadCurrentSection();
     }
 
     // Načtení dat aktuální sekce
     function loadCurrentSection() {
         switch (appData.currentSection) {
-            case 'prehled':
-                renderLekarnicke();
-                break;
             case 'material':
                 loadMaterial();
                 break;
@@ -389,7 +439,7 @@ export function lekarnicky() {
         }
 
         // Kontrola nízkého stavu
-        if (material.aktualni_pocet <= material.minimalni_pocet) {
+        if (material.aktualni_pocet < material.minimalni_pocet) {
             statusBadge += ' <span class="badge bg-danger shadow-sm ms-1">Nízký stav</span>';
             if (!statusClass) statusClass = 'row-warning';
         }
@@ -425,73 +475,107 @@ export function lekarnicky() {
 
     // Načtení úrazů
     async function loadUrazy() {
-        const tbody = document.getElementById('urazy-tbody');
-        if (!tbody) return;
+        const tableEl = document.getElementById('urazyTable');
+        if (!tableEl) return;
 
-        // Zrušit starou instanci DataTables (pokud existuje)
+        // Zničit starou instanci, pokud existuje
         if ($.fn.DataTable && $.fn.DataTable.isDataTable('#urazyTable')) {
             $('#urazyTable').DataTable().destroy();
-            $(tbody).empty();
+            // Vyčistit tbody, aby si DataTable nesahal na staré řádky
+            const oldTbody = tableEl.querySelector('tbody');
+            if (oldTbody) oldTbody.innerHTML = '';
         }
 
+        let urazy = [];
         try {
-            const urazy = await apiCall('/api/lekarnicke/urazy');
-            appData.urazy = urazy || [];
-
-            if (!urazy || urazy.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">Žádné záznamy úrazů</td></tr>';
-            } else {
-                tbody.innerHTML = urazy.map(u => {
-                    const datum = u.datum_cas_urazu
-                        ? new Date(u.datum_cas_urazu).toLocaleString('cs-CZ')
-                        : '—';
-                    const zamestnanec = u.zamestnanec
-                        ? `${u.zamestnanec.prijmeni} ${u.zamestnanec.jmeno}`
-                        : '—';
-                    const lekarnicka = u.lekarnicky
-                        ? u.lekarnicky.nazev
-                        : '—';
-                    const zavaznostBadge = {
-                        'lehky': '<span class="badge bg-success shadow-sm">Lehký</span>',
-                        'stredni': '<span class="badge bg-warning shadow-sm text-dark">Střední</span>',
-                        'tezky': '<span class="badge bg-danger shadow-sm">Těžký</span>'
-                    }[u.zavaznost] || u.zavaznost || '—';
-
-                    return `
-                        <tr>
-                            <td><i class="fa-regular fa-clock me-1 text-muted"></i> ${datum}</td>
-                            <td><span class="fw-bold">${zamestnanec}</span></td>
-                            <td>${u.misto_urazu || '—'}</td>
-                            <td>${zavaznostBadge}</td>
-                            <td><span class="text-primary">${lekarnicka}</span></td>
-                            <td class="text-end px-4">
-                                <button class="btn btn-link text-danger p-0"
-                                        onclick="deleteUraz(${u.id})"
-                                        title="Smazat záznam">
-                                    <i class="fa-solid fa-trash-can fs-5"></i>
-                                </button>
-                            </td>
-                        </tr>
-                    `;
-                }).join('');
-            }
-
-            // Inicializace DataTable
-            if ($.fn.DataTable) {
-                const tableConfig = {
-                    responsive: true,
-                    pageLength: 10,
-                    language: { url: '/assets/cs.json' }
-                };
-                $('#urazyTable').DataTable(tableConfig);
-            }
-
+            const response = await apiCall('/api/lekarnicke/urazy');
+            urazy = Array.isArray(response) ? response : [];
+            appData.urazy = urazy;
         } catch (error) {
             console.error('Chyba při načítání úrazů:', error);
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger">Chyba při načítání záznamů</td></tr>';
+            urazy = []; // i při chybě vykreslíme prázdnou tabulku, ne placeholder s colspan
         }
-    }
 
+        // Pomocná funkce pro escapování HTML (nikdy ne raw text z DB)
+        const esc = (str) => {
+            const div = document.createElement('div');
+            div.textContent = String(str ?? '');
+            return div.innerHTML;
+        };
+
+        const zavaznostBadges = {
+            'lehky':   '<span class="badge bg-success shadow-sm">Lehký</span>',
+            'stredni': '<span class="badge bg-warning shadow-sm text-dark">Střední</span>',
+            'tezky':   '<span class="badge bg-danger shadow-sm">Těžký</span>',
+        };
+
+        // Inicializace DataTable s daty - DataTable si řídí render řádků sám
+        $('#urazyTable').DataTable({
+            data: urazy,
+            responsive: true,
+            pageLength: 10,
+            order: [[0, 'desc']],
+            language: { url: '/assets/cs.json' },
+            columns: [
+                {
+                    title: 'Datum',
+                    data: 'datum_cas_urazu',
+                    render: function (data) {
+                        if (!data) return '—';
+                        const d = new Date(data);
+                        if (isNaN(d.getTime())) return '—';
+                        return '<i class="fa-regular fa-clock me-1 text-muted"></i> '
+                             + d.toLocaleString('cs-CZ');
+                    },
+                },
+                {
+                    title: 'Zaměstnanec',
+                    data: 'zamestnanec',
+                    render: function (data) {
+                        if (!data) return '—';
+                        const jmeno = `${data.prijmeni || ''} ${data.jmeno || ''}`.trim();
+                        return jmeno
+                            ? `<span class="fw-bold">${esc(jmeno)}</span>`
+                            : '—';
+                    },
+                },
+                {
+                    title: 'Místo úrazu',
+                    data: 'misto_urazu',
+                    render: (data) => esc(data || '—'),
+                },
+                {
+                    title: 'Závažnost',
+                    data: 'zavaznost',
+                    render: (data) => zavaznostBadges[data] || esc(data || '—'),
+                },
+                {
+                    title: 'Lékárnička',
+                    data: 'lekarnicky',
+                    render: function (data) {
+                        if (!data || !data.nazev) return '—';
+                        return `<span class="text-primary">${esc(data.nazev)}</span>`;
+                    },
+                },
+                {
+                    title: 'Akce',
+                    data: 'id',
+                    orderable: false,
+                    searchable: false,
+                    className: 'text-end px-4',
+                    render: function (id) {
+                        return `
+                            <button class="btn btn-link text-danger p-0"
+                                    onclick="deleteUraz(${id})"
+                                    title="Smazat záznam">
+                                <i class="fa-solid fa-trash-can fs-5"></i>
+                            </button>
+                        `;
+                    },
+                },
+            ],
+        });
+    }
     // Nastavení výkazů
     function setupVykazy() {
         const today = new Date();
@@ -585,6 +669,40 @@ export function lekarnicky() {
             });
         } catch (error) {
             console.error('Chyba při načítání zaměstnanců:', error);
+        }
+    }
+    
+    //Naplní select kandidáty na vlastníka lékárničky.
+    async function populateOwnersSelect(selectId) {
+        const select = document.getElementById(selectId);
+        if (!select) return;
+
+        // Zachovat první "-- vyberte --" option, ostatní vyhodit
+        select.innerHTML = '<option value="">-- vyberte uživatele --</option>';
+
+        try {
+            const users = await apiCall('/api/lekarnicke/available-owners');
+
+            if (!Array.isArray(users) || users.length === 0) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.disabled = true;
+                opt.textContent = '(žádný kandidát - přiřaďte oprávnění lekarnicke.create nebo .edit)';
+                select.appendChild(opt);
+                return;
+            }
+
+            users.forEach(user => {
+                const opt = document.createElement('option');
+                opt.value = user.id;
+                opt.textContent = user.email
+                    ? `${user.label} (${user.email})`
+                    : user.label;
+                select.appendChild(opt);
+            });
+        } catch (error) {
+            console.error('Chyba při načítání kandidátů na vlastníka:', error);
+            showNotification('Nepodařilo se načíst seznam uživatelů', 'error');
         }
     }
 
@@ -1067,6 +1185,14 @@ window.editMaterial = async function(id) {
             addUrazModal.addEventListener('show.bs.modal', () => {
                 populateLekarnickySelect('uraz-lekarnicky-select');
                 populateZamestnanciSelect('uraz-zamestnanec-select');
+            });
+        }
+
+        // Event listener pro zodpovědná osoba za lékarniku 
+        const addLekarnickModal = document.getElementById('addLekarnickModal');
+        if (addLekarnickModal) {
+            addLekarnickModal.addEventListener('show.bs.modal', () => {
+                populateOwnersSelect('lekarnicky-owner-select');
             });
         }
 

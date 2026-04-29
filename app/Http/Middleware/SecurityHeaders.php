@@ -19,12 +19,16 @@ class SecurityHeaders
         //  - cdn.jsdelivr.net (Chart.js, FontAwesome - po V-02 odstraňte)
         //  - inline styly (Bootstrap některé používá)
         //  - data: URL pro obrázky (signature canvas)
+        $isLocal = app()->environment('local');
+        $viteServer = $isLocal ? "http://127.0.0.1:5173 http://localhost:5173 http://[::1]:5173" : "";
+        $viteWs = $isLocal ? "ws://127.0.0.1:5173 ws://localhost:5173 ws://[::1]:5173" : "";
+
         $csp = implode('; ', [
             "default-src 'self'",
-            "script-src 'self' 'unsafe-inline'",
-            "style-src 'self' 'unsafe-inline'",
+            "script-src 'self' 'unsafe-inline' $viteServer",
+            "style-src 'self' 'unsafe-inline' $viteServer",
             "img-src 'self' data: blob: https:",
-            "connect-src 'self' https://api.openweathermap.org https://date.nager.at",
+            "connect-src 'self' https://api.openweathermap.org https://date.nager.at $viteWs",
             "frame-ancestors 'self'",
             "base-uri 'self'",
             "form-action 'self'",

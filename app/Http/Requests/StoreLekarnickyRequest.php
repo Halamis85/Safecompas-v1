@@ -1,8 +1,5 @@
 <?php
 // app/Http/Requests/StoreLekarnickyRequest.php
-// FIX V-07: FormRequest pro vytvoření lékárničky
-// Vytvořte podobné třídy pro: Update, StoreMaterial, UpdateMaterial,
-// StoreUraz, VydejMaterial, StoreUser
 
 namespace App\Http\Requests;
 
@@ -24,38 +21,23 @@ class StoreLekarnickyRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'nazev'             => 'required|string|max:255',
-            'umisteni'          => 'required|string|max:255',
-            'zodpovedna_osoba'  => 'required|string|max:255',
-            'popis'             => 'nullable|string|max:5000',
-            'status'            => 'sometimes|in:aktivni,neaktivni',
-            'dalsi_kontrola'    => 'nullable|date|after_or_equal:today',
+            'nazev'                    => 'required|string|max:255',
+            'umisteni'                 => 'required|string|max:255',
+            'zodpovedna_osoba_user_id' => 'required|integer|exists:users,id',
+            'popis'                    => 'nullable|string|max:5000',
+            'status'                   => 'sometimes|in:aktivni,neaktivni',
+            'dalsi_kontrola'           => 'nullable|date|after_or_equal:today',
         ];
     }
 
     public function messages(): array
     {
         return [
-            'nazev.required'           => 'Název lékárničky je povinný.',
-            'umisteni.required'        => 'Umístění je povinné.',
-            'zodpovedna_osoba.required'=> 'Zodpovědná osoba je povinná.',
-            'dalsi_kontrola.after_or_equal' => 'Datum kontroly nemůže být v minulosti.',
+            'nazev.required'                    => 'Název lékárničky je povinný.',
+            'umisteni.required'                 => 'Umístění je povinné.',
+            'zodpovedna_osoba_user_id.required' => 'Zodpovědná osoba je povinná.',
+            'zodpovedna_osoba_user_id.exists'   => 'Vybraný uživatel neexistuje.',
+            'dalsi_kontrola.after_or_equal'     => 'Datum kontroly nemůže být v minulosti.',
         ];
     }
 }
-
-
-// === Použití v controlleru: ===
-// app/Http/Controllers/LekarnickController.php
-
-// Místo:
-//   public function store(Request $request) {
-//       $request->validate([...]);
-//       ...
-//   }
-
-// Použijte:
-
-
-
-

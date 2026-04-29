@@ -37,7 +37,7 @@ class LekarnickController extends Controller
         $kontrolaLimit   = $now->copy()->addDays(config('lekarnicke.kontrola_warn_days', 7));
 
         // 1) Lékárničky - počet a aktivní
-        $lekarnicke = Lekarnicky::select('id', 'status', 'dalsi_kontrola')->get();
+        $lekarnicke = Lekarnicky::with('material')->get();
 
         // 2) Materiál - dva dotazy nad celou tabulkou (cca 1 ms i pro 100k řádků s indexy)
         $expirujici = LekarnickeMaterial::query()
@@ -47,7 +47,7 @@ class LekarnickController extends Controller
             ->count();
 
         $nizkyStav = LekarnickeMaterial::query()
-            ->whereColumn('aktualni_pocet', '<=', 'minimalni_pocet')
+            ->whereColumn('aktualni_pocet', '<', 'minimalni_pocet')
             ->count();
 
         // 3) Kontroly - lékárničky které potřebují kontrolu
@@ -63,12 +63,12 @@ class LekarnickController extends Controller
         return response()->json([
             'lekarnicke' => $lekarnicke,
             'statistiky' => [
-            'celkem_lekarnicek'   => $lekarnicke->count(),
-            'aktivni_lekarnicke'  => $lekarnicke->where('status', 'aktivni')->count(),
-            'expirujici_material' => $expirujici,
-            'nizky_stav_material' => $nizkyStav,
-            'potreba_kontroly'    => $potrebaKontroly,
-            'urazy_tento_mesic'   => $urazyMesic,
+                'celkem_lekarnicek'   => $lekarnicke->count(),
+                'aktivni_lekarnicke'  => $lekarnicke->where('status', 'aktivni')->count(),
+                'expirujici_material' => $expirujici,
+                'nizky_stav_material' => $nizkyStav,
+                'potreba_kontroly'    => $potrebaKontroly,
+                'urazy_tento_mesic'   => $urazyMesic,
             ],
         ]);
     }
@@ -103,7 +103,7 @@ class LekarnickController extends Controller
         foreach ($materials as $m) {
             if ($m->datum_expirace && Carbon::parse($m->datum_expirace)->isPast()) {
                 $materialStats['expired']++;
-            } elseif ($m->aktualni_pocet <= $m->minimalni_pocet) {
+            } elseif ($m->aktualni_pocet < $m->minimalni_pocet) {
                 $materialStats['low']++;
             } else {
                 $materialStats['ok']++;
@@ -124,9 +124,40 @@ class LekarnickController extends Controller
         ]);
     }
 
-    public function store(StoreLekarnickyRequest $request)
+        public function store(StoreLekarnickyRequest $request)
     {
-        $lekarnicky = \App\Models\Lekarnicky::create($request->validated());
+        $validated = $request->validated();
+
+        // Najdi vybraného uživatele a převed jeho ID na jméno do textového sloupce
+        $owner = \App\Models\User::select('id', 'firstname', 'lastname')
+            ->where('is_active', true)
+            ->findOrFail($validated['zodpovedna_osoba_user_id']);
+
+        $ownerName = trim(($owner->firstname ?? '') . ' ' . ($owner->lastname ?? ''));
+        if ($ownerName === '') {
+            $ownerName = 'ID ' . $owner->id;
+        }
+
+        // Vytvoř lékárničku v transakci - pokud selže přiřazení access,
+        // nezůstane lékárnička bez vlastníka
+        $lekarnicky = \Illuminate\Support\Facades\DB::transaction(function () use ($validated, $owner, $ownerName) {
+            $lekarnicky = \App\Models\Lekarnicky::create([
+                'nazev'            => $validated['nazev'],
+                'umisteni'         => $validated['umisteni'],
+                'zodpovedna_osoba' => $ownerName,                       // textový popis pro UI
+                'popis'            => $validated['popis']          ?? null,
+                'status'           => $validated['status']         ?? 'aktivni',
+                'dalsi_kontrola'   => $validated['dalsi_kontrola'] ?? null,
+            ]);
+
+            // Přiřaď vlastníka přes user_lekarnicky_access (level=admin)
+            // - to je to, co notifikace skutečně používají.
+            $owner->lekarnickAccess()->syncWithoutDetaching([
+                $lekarnicky->id => ['access_level' => 'admin'],
+            ]);
+
+            return $lekarnicky;
+        });
 
         return response()->json([
             'success'    => true,
@@ -134,6 +165,42 @@ class LekarnickController extends Controller
             'message'    => 'Lékárnička byla úspěšně vytvořena',
         ]);
     }
+
+        /**
+     * Seznam uživatelů, kteří mohou být vlastníky lékárničky.
+     *
+     * Kandidát = aktivní uživatel s alespoň jedním z oprávnění:
+     *   lekarnicke.create, lekarnicke.edit
+     *   nebo super_admin role
+     */
+    public function getAvailableOwners(): \Illuminate\Http\JsonResponse
+    {
+        $users = \App\Models\User::query()
+            ->select('id', 'firstname', 'lastname', 'email', 'username')
+            ->where('is_active', true)
+            ->where(function ($query) {
+                $query->whereHas('roles', function ($q) {
+                    $q->where('name', 'super_admin');
+                })
+                ->orWhereHas('roles.permissions', function ($q) {
+                    $q->whereIn('permissions.name', ['lekarnicke.create', 'lekarnicke.edit']);
+                });
+            })
+            ->orderBy('lastname')
+            ->orderBy('firstname')
+            ->get()
+            ->map(function ($user) {
+                $name = trim(($user->firstname ?? '') . ' ' . ($user->lastname ?? ''));
+                return [
+                    'id'    => $user->id,
+                    'label' => $name !== '' ? $name : $user->username,
+                    'email' => $user->email,
+                ];
+            });
+
+        return response()->json($users);
+    }
+
 
     public function show($id)
     {
@@ -154,6 +221,27 @@ class LekarnickController extends Controller
             'message' => 'Lékárnička byla aktualizována'
         ]);
     }
+    //pro pozice lékárniček v planu 
+        public function updatePlanPosition(\Illuminate\Http\Request $request, $id)
+    {
+        $validated = $request->validate([
+            'plan_x' => 'nullable|numeric|min:0|max:100',
+            'plan_y' => 'nullable|numeric|min:0|max:100',
+        ]);
+
+        $lekarnicky = \App\Models\Lekarnicky::findOrFail($id);
+        $lekarnicky->update([
+            'plan_x' => $validated['plan_x'] ?? null,
+            'plan_y' => $validated['plan_y'] ?? null,
+        ]);
+
+        return response()->json([
+            'success'    => true,
+            'lekarnicky' => $lekarnicky,
+            'message'    => 'Pozice na plánu uložena',
+        ]);
+    }
+
 
     public function destroy($id)
     {

@@ -1,6 +1,5 @@
 <?php
 
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,12 +19,16 @@ class Lekarnicky extends Model
         'popis',
         'status',
         'posledni_kontrola',
-        'dalsi_kontrola'
+        'dalsi_kontrola',
+        'plan_x',
+        'plan_y',
     ];
 
     protected $casts = [
         'posledni_kontrola' => 'date',
-        'dalsi_kontrola' => 'date',
+        'dalsi_kontrola'    => 'date',
+        'plan_x'            => 'float',
+        'plan_y'            => 'float',
     ];
 
     public function material()
@@ -49,7 +52,7 @@ class Lekarnicky extends Model
     public function getNizkyStavMaterialAttribute()
     {
         return $this->material()
-            ->whereRaw('aktualni_pocet <= minimalni_pocet')
+            ->whereColumn('aktualni_pocet', '<', 'minimalni_pocet')
             ->get();
     }
 
