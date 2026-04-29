@@ -50,11 +50,14 @@ class ObjednavkyController extends Controller
     }
 
     /**
-     * Vytvoření nové objednávky a notifikace adminů.
+     * Vytvoření nové objednávky a notifikace skladníků.
+     *
+     * Notifikace se posílají uživatelům, kteří mají oprávnění vydávat
+     * OOPP (oopp.edit) - to jsou ti, kdo skutečně potřebují vědět,
+     * že je co vydat. Plus super_admins, kteří vidí všechno.
      *
      * Notifikace se odesílají jednou hromadnou operací (Notification::send),
-     * což je výrazně efektivnější než cyklické volání $admin->notify() —
-     * Laravel provede batch insert do tabulky 'notifications' i do queue.
+     * což je efektivnější než cyklické volání $user->notify().
      */
     public function store(StoreObjednavkaRequest $request): JsonResponse
     {
@@ -69,24 +72,30 @@ class ObjednavkyController extends Controller
 
             $objednavka->load(['zamestnanec', 'produkt']);
 
-            // Načítáme jen potřebné sloupce (id pro DB notif, email pro mail)
-            $admins = User::select('id', 'email', 'firstname', 'lastname')
-                ->whereHas('roles', function ($query) {
-                    $query->whereIn('name', ['admin', 'super_admin']);
-                })
+            // Příjemci: uživatelé s oprávněním vydávat OOPP (oopp.edit)
+            // nebo super_admins. Tedy ti, kdo objednávku reálně vyřídí.
+            $recipients = User::select('id', 'email', 'firstname', 'lastname')
                 ->where('is_active', true)
+                ->where(function ($query) {
+                    $query->whereHas('roles', function ($q) {
+                        $q->where('name', 'super_admin');
+                    })
+                    ->orWhereHas('roles.permissions', function ($q) {
+                        $q->where('permissions.name', 'oopp.edit');
+                    });
+                })
                 ->get();
 
             // Hromadné odeslání notifikací (efektivní batch insert)
-            if ($admins->isNotEmpty()) {
+            if ($recipients->isNotEmpty()) {
                 try {
-                    Notification::send($admins, new OrderCreatedNotification($objednavka));
+                    Notification::send($recipients, new OrderCreatedNotification($objednavka));
                 } catch (\Exception $e) {
                     // Selhání notifikací nesmí zablokovat vytvoření objednávky
                     Log::warning('Notifikace o nové objednávce se nepodařilo odeslat', [
-                        'objednavka_id' => $objednavka->id,
-                        'admin_count' => $admins->count(),
-                        'error' => $e->getMessage(),
+                        'objednavka_id'   => $objednavka->id,
+                        'recipient_count' => $recipients->count(),
+                        'error'           => $e->getMessage(),
                     ]);
                 }
             }
@@ -168,7 +177,7 @@ class ObjednavkyController extends Controller
 
         $signature = $request->signature;
 
-        // === Validace base64 obrázku (jako dříve) ===
+        // === Validace base64 obrázku ===
         if (!preg_match('/^data:image\/(png|jpeg);base64,/', $signature)) {
             return response()->json(['error' => 'Neplatný formát podpisu.'], 400);
         }
@@ -210,50 +219,48 @@ class ObjednavkyController extends Controller
         }
         imagedestroy($imageResource);
 
-        // === FIX K-06 + L-08: UUID místo sekvenčního čísla, PRIVATE disk ===
         $filename = \Illuminate\Support\Str::uuid()->toString() . '.png';
 
-        // POZOR: 'local' disk = storage/app/private/. NENÍ veřejně přístupný.
         Storage::disk('local')
             ->put('signatures/' . $filename, $decoded);
 
         DB::beginTransaction();
         try {
             $updated = DB::table('objednavky')
-            ->where('id', $request->order_id)
-            ->where('status', '!=', 'vydano')
-            ->update([
-                'podpis_path'  => $filename,
-                'datum_vydani' => now(),
-                'status'       => 'vydano',
-            ]);
+                ->where('id', $request->order_id)
+                ->where('status', '!=', 'vydano')
+                ->update([
+                    'podpis_path'  => $filename,
+                    'datum_vydani' => now(),
+                    'status'       => 'vydano',
+                ]);
 
-        if ($updated === 0) {
+            if ($updated === 0) {
+                DB::rollBack();
+                Storage::disk('local')->delete('signatures/' . $filename);
+                return response()->json([
+                    'error' => 'Objednávka nebyla nalezena nebo již byla vydána.',
+                ], 400);
+            }
+
+            DB::commit();
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Podpis úspěšně uložen',
+                'path'    => $filename,
+            ]);
+        } catch (\Exception $e) {
             DB::rollBack();
             Storage::disk('local')->delete('signatures/' . $filename);
+            Log::error('Vydat order error: ' . $e->getMessage());
+
             return response()->json([
-                'error' => 'Objednávka nebyla nalezena nebo již byla vydána.',
-            ], 400);
+                'status'  => 'error',
+                'message' => 'Chyba při ukládání podpisu.',
+            ], 500);
         }
-
-        DB::commit();
-
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Podpis úspěšně uložen',
-            'path'    => $filename,
-        ]);
-    } catch (\Exception $e) {
-        DB::rollBack();
-        Storage::disk('local')->delete('signatures/' . $filename);
-        Log::error('Vydat order error: ' . $e->getMessage());
-
-        return response()->json([
-            'status'  => 'error',
-            'message' => 'Chyba při ukládání podpisu.',
-        ], 500);
     }
-}
 
     public function getLastInfo(Request $request): JsonResponse
     {

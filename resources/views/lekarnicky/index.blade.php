@@ -73,12 +73,12 @@
 
         <!-- Navigační karty -->
         <div class="row justify-content-center mb-4" id="navigation-cards" style="display: none;">
-            <div class="col-md-3 mb-3">
+           <div class="col-md-3 mb-3">
                 <div class="card-circle-icons animated-circle-icons d-flex flex-column
                         justify-content-center align-items-center text-center navigation-card"
-                     data-section="prehled" style="cursor: pointer;">
-                    <i class="fa-solid fa-list fa-2x pb-2"></i>
-                    <span>Přehled lékárniček</span>
+                     data-section="plan" style="cursor: pointer;">
+                    <i class="fa-solid fa-map-location-dot fa-2x pb-2"></i>
+                    <span>Umístění lékárniček</span>
                 </div>
             </div>
             <div class="col-md-3 mb-3">
@@ -107,16 +107,22 @@
             </div>
         </div>
 
-        <!-- Obsah sekcí -->
-        <div id="content-sections">
-            <!-- Přehled lékárniček -->
-            <div id="section-prehled" class="content-section">
+             <!-- Obsah sekcí -->
+    <div id="content-sections">
+        <!-- Přehled lékárniček  -->
+            <div id="section-prehled">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h3>Přehled lékárniček</h3>
-                    <!-- Dočasně zobrazit tlačítko všem -->
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLekarnickModal">
-                        <i class="fa-solid fa-plus"></i> Přidat lékárničku
-                    </button>
+                    @php
+                        $perms = session('user.permissions', []);
+                        $canCreateLekarnicky = session('user.is_super_admin')
+                            || in_array('lekarnicke.create', $perms);
+                    @endphp
+                    @if($canCreateLekarnicky)
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addLekarnickModal">
+                            <i class="fa-solid fa-plus"></i> Přidat lékárničku
+                        </button>
+                    @endif
                 </div>
 
                 <div class="row" id="lekarnicke-list">
@@ -124,18 +130,13 @@
                 </div>
             </div>
 
-            <!-- Sekce vykazy odstraněna a přesunuta do modalu -->
-
-        </div>
-    </div>
-
     <!-- Prázdné modaly pro začátek -->
     <div class="modal fade" id="addLekarnickModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content glass-modal border-0">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title fw-bold">Přidat novou lékárničku</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close " data-bs-dismiss="modal"></button>
                 </div>
                 <form id="add-lekarnicky-form">
                     <div class="modal-body p-4">
@@ -149,7 +150,12 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Zodpovědná osoba *</label>
-                            <input type="text" class="form-control" name="zodpovedna_osoba" required>
+                            <select class="form-select" name="zodpovedna_osoba_user_id" id="lekarnicky-owner-select" required>
+                                <option value="">-- vyberte uživatele --</option>
+                            </select>
+                            <small class="form-text text-muted">
+                                Tento uživatel bude dostávat e-mailové notifikace o stavu lékárničky (expirace, nízký stav, kontroly).
+                            </small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Popis</label>
@@ -171,7 +177,7 @@
             <div class="modal-content glass-modal border-0 shadow-lg">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title fw-bold fs-4"><i class="fa-solid fa-boxes-stacked me-2"></i> Správa materiálu</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -210,7 +216,7 @@
             <div class="modal-content glass-modal border-0 shadow-lg">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title fw-bold fs-4"><i class="fa-solid fa-file-waveform me-2"></i> Záznamy úrazů</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4">
                     <div class="d-flex justify-content-end mb-4">
@@ -248,7 +254,7 @@
                     <h5 class="modal-title fw-bold fs-3 text-white">
                         <i class="fa-solid fa-chart-pie me-2 text-primary"></i> Analytický přehled lékárniček
                     </h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body p-4 pt-0">
                     <div class="row g-4">
@@ -319,4 +325,5 @@
     @include('lekarnicky.modals.add-material')
     @include('lekarnicky.modals.add-uraz')
     @include('lekarnicky.modals.detail-lekarnicky')
+    @include('lekarnicky.modals.plan-budovy')
 @endsection

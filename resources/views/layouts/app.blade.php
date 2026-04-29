@@ -38,7 +38,10 @@
                     </li>
                 </ul>
             </div>
-            @include('components.notifica-bell')
+            {{-- Notifikační zvonek - pouze pro přihlášené --}}
+            @if(session('user'))
+                @include('components.notifica-bell')
+            @endif
             <div class="tooltip-container">
                 <button class="nav-link" id="profileSidebarToggle">
                     <img src="{{asset('images/menu_open.webp') }}" alt="menu icon" style="width: 90px; height: 90px;" class="navbar-avatar-img">
@@ -49,7 +52,7 @@
     </div>
 </header>
 
-<div class="profile-sidebar" id="profileSidebar"aria-label="hlavni menu">    
+<div class="profile-sidebar" id="profileSidebar" aria-label="hlavni menu">
     <div class="sidebar-header">
         <img src="{{asset('images/cons.png') }}" alt="Fotka uživatele" class="rounded-circle sidebar-avatar-img">
         <h5 class="mb-0 mt-2"></h5>
@@ -57,7 +60,7 @@
         <button class="btn-close" aria-label="Close" id="closeSidebar"></button>
     </div>
     <div class="sidebar-body">
-        <button class="sidebar-item text-center w-100 " id="theme-toggle" aria-label="zapnutí světelného režimu"> 
+        <button class="sidebar-item text-center w-100 " id="theme-toggle" aria-label="zapnutí světelného režimu">
             <i class="fa-solid fa-sun"></i> Režim
         </button>
         <a class="sidebar-item text-center" href="/admin" aria-label="přesun do administrace">
@@ -68,9 +71,8 @@
         </a>
     </div>
     <button class="sidebar-item mt-2 logout-item text-center w-100" data-bs-toggle="modal" data-bs-target="#logoutModal">
-    <i class="fa-solid fa-right-from-bracket me-1"></i> Odhlásit se
-</button>
-
+        <i class="fa-solid fa-right-from-bracket me-1"></i> Odhlásit se
+    </button>
 </div>
 
 <div class="sidebar-overlay" id="sidebarOverlay"></div>
@@ -90,7 +92,6 @@
 </footer>
 
 <!-- Vysklaovací okno pro odhlášení -->
-
 <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content p-4">
@@ -107,6 +108,7 @@
         </div>
     </div>
 </div>
+
 <!-- Modal: Varování před automatickým odhlášením -->
 <div class="modal fade" id="sessionWarningModal" tabindex="-1"
      aria-labelledby="sessionWarningModalLabel" aria-hidden="true"
@@ -137,5 +139,3 @@
 </div>
 </body>
 </html>
-
-

@@ -55,6 +55,6 @@ class LekarnickeMaterial extends Model
 
     public function getJeNizkyStavAttribute()
     {
-        return $this->aktualni_pocet <= $this->minimalni_pocet;
+        return $this->aktualni_pocet < $this->minimalni_pocet;
     }
 }

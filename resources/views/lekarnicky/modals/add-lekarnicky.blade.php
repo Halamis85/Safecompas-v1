@@ -16,9 +16,14 @@
                         <label class="form-label">Umístění *</label>
                         <input type="text" class="form-control" name="umisteni" required>
                     </div>
-                    <div class="mb-3">
+                     <div class="mb-3">
                         <label class="form-label">Zodpovědná osoba *</label>
-                        <input type="text" class="form-control" name="zodpovedna_osoba" required>
+                        <select class="form-select" name="zodpovedna_osoba_user_id" id="lekarnicky-owner-select" required>
+                            <option value="">-- vyberte uživatele --</option>
+                        </select>
+                        <small class="form-text text-muted">
+                            Tento uživatel bude dostávat e-mailové notifikace o stavu lékárničky (expirace, nízký stav, kontroly).
+                        </small>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">Popis</label>

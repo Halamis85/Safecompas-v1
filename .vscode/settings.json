@@ -4,6 +4,7 @@
         "datatables",
         "expirujici",
         "phpredis",
+        "Queueable",
         "safecompas",
         "Safecompas"
     ]

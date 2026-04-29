@@ -1,5 +1,4 @@
 <?php
-// routes/web.php 
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
@@ -23,7 +22,7 @@ use App\Http\Controllers\API\StatistikaController;
 |--------------------------------------------------------------------------
 */
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');                                   
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:10,1');
 Route::get('/logout', [AuthController::class, 'logout'])->name('logout');
 
 Route::get('/password/forgot',  [AuthController::class, 'showForgot'])->name('password.forgot');
@@ -40,6 +39,7 @@ Route::middleware(['custom.auth'])->group(function () {
     Route::get('/check-session',   [AuthController::class, 'checkSession']);
     Route::post('/extend-session', [AuthController::class, 'extendSession']);
 });
+
 /*
 |--------------------------------------------------------------------------
 | Chráněné routes
@@ -82,23 +82,24 @@ Route::middleware(['custom.auth'])->group(function () {
     Route::middleware(['permission:oopp.view'])
         ->get('/signatures/{filename}', [SignatureController::class, 'show'])
         ->where('filename', '[A-Za-z0-9._-]+\.png');
+
     /*
     |--------------------------------------------------------------------------
     | Lékárničky Modul - s oprávněními
     |--------------------------------------------------------------------------
     */
-        Route::middleware(['permission:lekarnicke.view'])->group(function () {
+    Route::middleware(['permission:lekarnicke.view'])->group(function () {
         Route::get('/lekarnicke', [LekarnickController::class, 'index'])->name('lekarnicke.index');
     });
 
     // API – view operace
-    Route::middleware(['permission:lekarnicke.view'])
-        ->prefix('api/lekarnicke')->group(function () {
-            Route::get('/dashboard', [LekarnickController::class, 'dashboard']);
-            Route::get('/stats',     [LekarnickController::class, 'stats']);
-            Route::get('/{id}',      [LekarnickController::class, 'show'])
+    Route::middleware(['permission:lekarnicke.view'])->prefix('api/lekarnicke')->group(function () {
+        Route::get('/dashboard',         [LekarnickController::class, 'dashboard']);
+        Route::get('/stats',             [LekarnickController::class, 'stats']);
+        Route::get('/available-owners',  [LekarnickController::class, 'getAvailableOwners']);
+        Route::get('/{id}',              [LekarnickController::class, 'show'])
                 ->where('id', '[0-9]+')->middleware(['lekarnick.access:view']);
-        });
+    });
 
     // API – create
     Route::middleware(['permission:lekarnicke.create'])
@@ -106,7 +107,7 @@ Route::middleware(['custom.auth'])->group(function () {
             Route::post('/', [LekarnickController::class, 'store']);
         });
 
-    // API – edit / delete / kontrola
+    // API – edit / delete / kontrola / pozice v plánu
     Route::middleware(['permission:lekarnicke.edit'])
         ->prefix('api/lekarnicke')->group(function () {
             Route::put('/{id}', [LekarnickController::class, 'update'])
@@ -114,6 +115,8 @@ Route::middleware(['custom.auth'])->group(function () {
             Route::delete('/{id}', [LekarnickController::class, 'destroy'])
                 ->where('id', '[0-9]+')->middleware(['lekarnick.access:admin']);
             Route::post('/{id}/kontrola', [LekarnickController::class, 'kontrola'])
+                ->where('id', '[0-9]+')->middleware(['lekarnick.access:edit']);
+            Route::post('/{id}/plan-position', [LekarnickController::class, 'updatePlanPosition'])  
                 ->where('id', '[0-9]+')->middleware(['lekarnick.access:edit']);
         });
 
@@ -143,16 +146,19 @@ Route::middleware(['custom.auth'])->group(function () {
         ->prefix('api/lekarnicke')->group(function () {
             Route::get('/export-vykaz', [LekarnickController::class, 'exportVykaz']);
         });
+
     /*
     |--------------------------------------------------------------------------
-    | Notifikace - s oprávněními
+    | Notifikace - dostupné každému přihlášenému uživateli
     |--------------------------------------------------------------------------
+    | Notifikace jsou per-user (každý vidí jen své vlastní přes
+    | $user->notifications()). Permission gating zde nemá smysl - obsah
+    | je řízen tím, kdo notifikaci posílá, ne tím, kdo má jaké oprávnění.
     */
-     Route::middleware(['permission:notifications.view'])->group(function () {
-        Route::get('/notifications',                [NotificationController::class, 'index'])->name('notifications.index');
-        Route::post('/notifications/mark-read',     [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
-        Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
-    });
+    Route::get('/notifications',                [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-read',     [NotificationController::class, 'markAsRead'])->name('notifications.mark-read');
+    Route::post('/notifications/mark-all-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-read');
+
     /*
     |--------------------------------------------------------------------------
     | Statistiky - s oprávněními
@@ -168,7 +174,7 @@ Route::middleware(['custom.auth'])->group(function () {
 
     /*
     |--------------------------------------------------------------------------
-    | Administrace 
+    | Administrace
     |--------------------------------------------------------------------------
     */
     Route::middleware(['role:admin,super_admin'])->group(function () {
@@ -238,6 +244,3 @@ Route::fallback(function () {
     }
     return abort(404);
 });
-
-
-
