@@ -37,8 +37,9 @@ class ObjednavkyController extends Controller
                 'zamestnanci.jmeno',
                 'zamestnanci.prijmeni',
                 'produkty.nazev as produkt',
-                'produkty.obrazek',
+                DB::raw('TRIM(produkty.obrazek) as obrazek'),
                 'objednavky.velikost',
+                'objednavky.pocet_kusu',
                 'objednavky.status',
                 'objednavky.datum_objednani'
             )
@@ -66,38 +67,38 @@ class ObjednavkyController extends Controller
                 'zamestnanec_id'  => $request->zamestnanec_id,
                 'produkt_id'      => $request->produkt_id,
                 'velikost'        => $request->velikost,
+                'pocet_kusu'      => $request->input('pocet_kusu', 1),
                 'datum_objednani' => now()->toDateString(),
                 'status'          => 'cekajici',
             ]);
 
             $objednavka->load(['zamestnanec', 'produkt']);
 
-            // Příjemci: uživatelé s oprávněním vydávat OOPP (oopp.edit)
-            // nebo super_admins. Tedy ti, kdo objednávku reálně vyřídí.
+            // Příjemci: pouze skladníci a admini, kteří objednávku reálně vyřídí.
+            // Filtrujeme podle ROLE (ne oprávnění), aby se notifikace neposílala
+            // manažerům a OOPP uživatelům kteří mají oopp.edit oprávnění ale
+            // o nové objednávky se nestarat.
             $recipients = User::select('id', 'email', 'firstname', 'lastname')
                 ->where('is_active', true)
-                ->where(function ($query) {
-                    $query->whereHas('roles', function ($q) {
-                        $q->where('name', 'super_admin');
-                    })
-                    ->orWhereHas('roles.permissions', function ($q) {
-                        $q->where('permissions.name', 'oopp.edit');
-                    });
+                ->whereHas('roles', function ($q) {
+                    $q->whereIn('name', ['super_admin', 'admin', 'oopp.edit']);
                 })
                 ->get();
 
-            // Hromadné odeslání notifikací (efektivní batch insert)
+            // Notifikace se odesílají až PO odeslání HTTP odpovědi, aby uživatel
+            // nečekal na SMTP. dispatch()->afterResponse() nevyžaduje queue worker.
             if ($recipients->isNotEmpty()) {
-                try {
-                    Notification::send($recipients, new OrderCreatedNotification($objednavka));
-                } catch (\Exception $e) {
-                    // Selhání notifikací nesmí zablokovat vytvoření objednávky
-                    Log::warning('Notifikace o nové objednávce se nepodařilo odeslat', [
-                        'objednavka_id'   => $objednavka->id,
-                        'recipient_count' => $recipients->count(),
-                        'error'           => $e->getMessage(),
-                    ]);
-                }
+                dispatch(function () use ($recipients, $objednavka) {
+                    try {
+                        Notification::send($recipients, new OrderCreatedNotification($objednavka));
+                    } catch (\Exception $e) {
+                        Log::warning('Notifikace o nové objednávce se nepodařilo odeslat', [
+                            'objednavka_id'   => $objednavka->id,
+                            'recipient_count' => $recipients->count(),
+                            'error'           => $e->getMessage(),
+                        ]);
+                    }
+                })->afterResponse();
             }
 
             $zamestnanec = $objednavka->zamestnanec;

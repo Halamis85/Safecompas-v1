@@ -12,13 +12,24 @@ const cardCircle = document.querySelector('.card-circle-new-oopp');
 const druhSelect = document.getElementById('druh');
 const produktSelect = document.getElementById('produkt');
 const velikostSelect = document.getElementById('velikost');
+const pocetKusuGroup = document.getElementById('pocet-kusu-group');
+const pocetKusuInput = document.getElementById('pocet_kusu');
 const objednavkaForm = document.getElementById('objednavka-form');
+const submitBtn = objednavkaForm ? objednavkaForm.querySelector('button[type="submit"]') : null;
 
 
 let currentFocus = -1;
 let items = [];
 
 const csrfToken = document.querySelector('meta[name="csrf-token"]');
+
+function setSubmitLoading(loading) {
+    if (!submitBtn) return;
+    submitBtn.disabled = loading;
+    submitBtn.innerHTML = loading
+        ? '<i class="fa-solid fa-spinner fa-spin pe-3"></i> Odesílám...'
+        : '<i class="fa-solid fa-cart-shopping pe-3"></i> Objednat OOPP';
+}
 
 // Funkce pro resetování cardCircle do výchozího stavu
 function resetCardCircleContent() {
@@ -71,6 +82,8 @@ function displayCardMessage(iconClass, iconWeight, textColorClass, messageTitle,
         produktSelect.value = '';
         velikostSelect.innerHTML = '<option value="">Nejprve vyberte produkt</option>';
         velikostSelect.value = '';
+        pocetKusuGroup.classList.add('d-none');
+        pocetKusuInput.value = 1;
 
         // 4.Reset data na aktuální datum
         datumInput.value = new Date().toISOString().split('T')[0];
@@ -79,11 +92,12 @@ function displayCardMessage(iconClass, iconWeight, textColorClass, messageTitle,
         resetCardCircleContent(); // Voláme funkci, která znovu vytvoří elementy a získá nové reference
 
         // 6.Povolení vstupního pole pro zaměstnance a nastavení focus
+        setSubmitLoading(false);
         zamestnanecInput.disabled = false;
         zamestnanecInput.focus();
         zamestnanecList.classList.add('d-none');
 
-    }, 5000);
+    }, 1000);
 }
 
 
@@ -294,11 +308,18 @@ function objednavka() {
 
                     if (data.obrazek) {
                         const img = document.createElement('img');
-                        img.src = `/images/OOPP/${data.obrazek}`;
+                        img.src = `/images/OOPP/${data.obrazek.trim()}`;
                         img.alt = data.nazev;
                         bubbleContent.appendChild(img);
                     } else {
                         bubbleContent.textContent = 'Obrázek není k dispozici.';
+                    }
+
+                    if (data.allow_quantity) {
+                        pocetKusuGroup.classList.remove('d-none');
+                    } else {
+                        pocetKusuGroup.classList.add('d-none');
+                        pocetKusuInput.value = 1;
                     }
 
                     velikostSelect.innerHTML = '<option value="">Vyberte velikost</option>';
@@ -380,13 +401,14 @@ function objednavka() {
             return;
         }
 
-
+        setSubmitLoading(true);
 
         const data = {
             zamestnanec_id: zamestnanecId,
             produkt_id: produktId,
             velikost: velikost,
-            datum_objednani: datum
+            datum_objednani: datum,
+            pocet_kusu: pocetKusuGroup.classList.contains('d-none') ? 1 : parseInt(pocetKusuInput.value, 10) || 1,
         };
 
         fetch('/odeslat-objednavku', {
@@ -411,11 +433,13 @@ function objednavka() {
                 if (result.status === 'success') {
                     displayCardMessage('fa-solid fa-circle-check', 'fa-10x', 'text-success', 'Objednávka<br>vytvořena', null, 'success');
                 } else {
+                    setSubmitLoading(false);
                     displayCardMessage('fas fa-times-circle', 'fa-4', 'text-danger', 'Chyba!', result.message || 'Nepodařilo se vytvořit objednávku.', 'error');
                     console.error('API vrátilo úspěšný status, ale result.status není "success":', result);
                 }
             })
             .catch(error => {
+                setSubmitLoading(false);
                 console.error('Chyba při odesílání objednávky:', error);
                 displayCardMessage('fas fa-exclamation-triangle', 'fa-4x', 'text-warning', 'Chyba!', error.message || 'Nelze se připojit k serveru.', 'error');
             });

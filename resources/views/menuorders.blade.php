@@ -58,6 +58,15 @@
                     </div>
                 </div>
 
+                <div class="col-12 d-none" id="pocet-kusu-group">
+                    <div class="mb-4">
+                        <label for="pocet_kusu">Počet kusů:</label>
+                        <input type="number" id="pocet_kusu" name="pocet_kusu"
+                               class="form-control shadow"
+                               min="1" max="999" value="1">
+                    </div>
+                </div>
+
                 <div class="text-center mt-4">
                     <button type="submit" class="btn btn-primary p-3 col-md-6 fs-5 shadow-lg">
                         <i class="fa-solid fa-cart-shopping pe-3"></i> Objednat OOPP

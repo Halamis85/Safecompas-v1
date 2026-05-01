@@ -12,46 +12,56 @@
         }
 
         // --- Funkce pro nastavení tématu ---
-        function setTheme(theme) {
+        function setTheme(theme, save = true) {
             if (bodyElement) { // Vždy kontrolujte, zda element existuje před manipulací
                 if (theme === 'dark') {
+                    document.documentElement.setAttribute('data-bs-theme', 'dark');
                     bodyElement.classList.add('dark-mode');
                     bodyElement.setAttribute('data-bs-theme', 'dark');
                     if (themeToggleBtn) { // Zkontrolujte, zda tlačítko existuje
                         themeToggleBtn.innerHTML = '<i class="fa-solid fa-sun"></i> Světlý režim';
                     }
-                    localStorage.setItem('theme', 'dark');
                 } else {
+                    document.documentElement.setAttribute('data-bs-theme', 'light');
                     bodyElement.classList.remove('dark-mode');
                     bodyElement.setAttribute('data-bs-theme', 'light');
                     if (themeToggleBtn) { // Zkontrolujte, zda tlačítko existuje
                         themeToggleBtn.innerHTML = '<i class="fa-solid fa-moon"></i> Tmavý režim';
                     }
-                    localStorage.setItem('theme', 'light');
+                }
+                
+                if (save) {
+                    localStorage.setItem('theme', theme);
                 }
             }
         }
 
         // --- Inicializace tématu při načtení stránky ---
         const savedTheme = localStorage.getItem('theme');
-        const prefersDarkScheme = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
         if (savedTheme) {
-            setTheme(savedTheme);
-        } else if (prefersDarkScheme) {
-            setTheme('dark');
+            setTheme(savedTheme, false); // Není potřeba znovu ukládat do localStorage
         } else {
-            setTheme('light');
+            setTheme(mediaQuery.matches ? 'dark' : 'light', false); // Systémovou preferenci rovnou neukládáme, dokud ji uživatel nezmění ručně
         }
+
+        // --- Posluchač pro automatickou změnu z OS ---
+        mediaQuery.addEventListener('change', (e) => {
+            // Pokud uživatel nemá natvrdo zvolené téma, reagujeme na systém
+            if (!localStorage.getItem('theme')) {
+                setTheme(e.matches ? 'dark' : 'light', false);
+            }
+        });
 
         // --- Přepínání tématu po kliknutí ---
         if (themeToggleBtn) { // Přidejte posluchač pouze pokud tlačítko existuje
             themeToggleBtn.addEventListener('click', () => {
                 const currentTheme = bodyElement.classList.contains('dark-mode') ? 'dark' : 'light';
                 if (currentTheme === 'dark') {
-                    setTheme('light');
+                    setTheme('light', true);
                 } else {
-                    setTheme('dark');
+                    setTheme('dark', true);
                 }
             });
         }

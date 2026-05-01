@@ -1,0 +1,290 @@
+/* ==========================================================================
+ *  Safecompas — Tables (Restart 2)
+ *
+ *  Cíl:
+ *  - Vyhodit ~140 řádků "AGRESIVNÍ OPRAVA" sekce ze style.css
+ *  - Vyhodit mrtvý DataTables 1.x kód (.dataTables_wrapper a spol.)
+ *  - Žádné `!important` zástupy — vše přes sémantické tokeny
+ *  - Tabulka v běžné kartě (light glass) i v modalu (dark glass)
+ *    se přizpůsobí kontextu sama, bez extra ID-overridů
+ * ========================================================================== */
+
+
+/* ==========================================================================
+ *  1) DataTables 2.x — wrapper a layout
+ *  Wrapper je vždy průhledný, ať glass karta pod ním prosvítá.
+ * ========================================================================== */
+
+.dt-container,
+.dt-layout-row,
+.dt-layout-cell,
+.dt-layout-start,
+.dt-layout-end,
+.dt-layout-full {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+}
+
+/* Skrýt labely "Search:" / "Show entries:" — placeholder v inputu stačí */
+label[for^="dt-search-"],
+label[for^="dt-length-"] {
+    display: none;
+}
+
+/* Vyhledávací pole zarovnat doprava a dát pod ním vzduch */
+.dt-search {
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Stránkování centrovat */
+.dt-layout-row:last-child {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    margin-top: 1.25rem;
+}
+
+.dt-layout-row:last-child .dt-layout-start,
+.dt-layout-row:last-child .dt-layout-end,
+.dt-layout-row:last-child .dt-layout-full {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Skrytí "Showing 1-10 of N" — máme info: false v JS, ale pro jistotu */
+.dt-info {
+    display: none;
+}
+
+
+/* ==========================================================================
+ *  2) Search/length input
+ * ========================================================================== */
+
+.dt-input {
+    background-color: var(--clr-input-bg);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    padding: 0.5rem 0.85rem;
+    border-radius: var(--radius-md);
+    transition:
+        background-color var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+    min-width: 220px;
+    font-size: var(--text-sm);
+}
+
+.dt-input:focus {
+    background-color: var(--clr-input-focus-bg);
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-focus);
+    outline: none;
+}
+
+.dt-input::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+
+/* ==========================================================================
+ *  3) Tabulka — bázové styly
+ *  Přemostíme Bootstrap proměnné a definujeme barvy přes tokeny.
+ * ========================================================================== */
+
+.table.dataTable {
+    background: transparent;
+    margin: 1rem 0;
+    color: var(--text-primary);
+    border-collapse: separate;
+    border-spacing: 0;
+
+    /* Bootstrap 5.3 table proměnné — pro automatickou kompatibilitu */
+    --bs-table-bg: transparent;
+    --bs-table-color: var(--text-primary);
+    --bs-table-striped-bg: var(--surface-sunken);
+    --bs-table-striped-color: var(--text-primary);
+    --bs-table-hover-bg: var(--accent-primary-soft);
+    --bs-table-hover-color: var(--text-primary);
+    --bs-table-border-color: var(--border-default);
+}
+
+.table.dataTable thead th,
+.table.dataTable thead td {
+    background-color: var(--surface-sunken);
+    color: var(--text-secondary);
+    font-weight: var(--font-semibold);
+    font-size: var(--text-xs);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border-default);
+    padding: 0.85rem 1rem;
+}
+
+/* Sortable hlavičky DT 2.x */
+.table.dataTable thead .dt-orderable-asc,
+.table.dataTable thead .dt-orderable-desc {
+    cursor: pointer;
+}
+
+.table.dataTable tbody tr {
+    background: transparent;
+    color: var(--text-primary);
+    transition: background-color var(--transition-fast);
+}
+
+.table.dataTable tbody td {
+    border-bottom: 1px solid var(--border-default);
+    padding: 0.85rem 1rem;
+    vertical-align: middle;
+    font-size: var(--text-sm);
+}
+
+/* Striped — pomocí tokenů, žádné !important */
+.table.dataTable.table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-accent-bg: var(--surface-sunken);
+    background-color: var(--surface-sunken);
+    color: var(--text-primary);
+}
+
+/* Hover */
+.table.dataTable.table-hover > tbody > tr:hover > *,
+.table.dataTable > tbody > tr:hover > * {
+    --bs-table-accent-bg: var(--accent-primary-soft);
+    background-color: var(--accent-primary-soft);
+    color: var(--text-primary);
+}
+
+
+/* ==========================================================================
+ *  4) Stránkování
+ * ========================================================================== */
+
+.dt-paging {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+}
+
+.dt-paging-button {
+    background-color: var(--surface-sunken);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    padding: 0.45rem 0.9rem;
+    border-radius: var(--radius-md);
+    font-weight: var(--font-medium);
+    font-size: var(--text-sm);
+    cursor: pointer;
+    transition:
+        background-color var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast),
+        transform 100ms ease;
+}
+
+.dt-paging-button:hover:not(.disabled):not(.current) {
+    background-color: var(--accent-primary-soft);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+.dt-paging-button.current {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--text-on-accent);
+    font-weight: var(--font-bold);
+    box-shadow: 0 0.25rem 0.6rem var(--accent-primary-glow);
+}
+
+.dt-paging-button.disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+
+/* ==========================================================================
+ *  5) Stavové řádky (warning / danger)
+ *  Používá se v lekarnicky.js pro materiál, který expiruje nebo má
+ *  nízký stav. Text musí zůstat čitelný — žluté na žluté NE.
+ * ========================================================================== */
+
+.row-warning,
+.table.dataTable > tbody > tr.row-warning {
+    background-color: var(--state-warning-bg);
+    color: var(--text-primary);
+}
+
+.row-warning:hover,
+.table.dataTable > tbody > tr.row-warning:hover {
+    background-color: var(--state-warning-bg);
+    color: var(--text-primary);
+    filter: brightness(1.05);
+}
+
+.row-danger,
+.table.dataTable > tbody > tr.row-danger {
+    background-color: var(--state-danger-bg);
+    color: var(--text-primary);
+}
+
+.row-danger:hover,
+.table.dataTable > tbody > tr.row-danger:hover {
+    background-color: var(--state-danger-bg);
+    color: var(--text-primary);
+    filter: brightness(1.05);
+}
+
+
+/* ==========================================================================
+ *  6) Šířky sloupců — zachovává původní behaviour
+ * ========================================================================== */
+
+.dt-column-akce,
+.dt-column-stredisko,
+.dt-column-surname,
+.dt-column-lastname {
+    width: 200px;
+    min-width: 100px;
+    text-align: center;
+}
+
+
+/* ==========================================================================
+ *  7) Tabulka uvnitř dark glass modalu
+ *  Pravidlo: glass-modal redefinuje tokeny lokálně, takže tabulka uvnitř
+ *  se chová jako "tabulka na tmavém pozadí" automaticky.
+ *  Žádné #materialModalList nebo #urazyModalList overridy — jakýkoliv
+ *  modal s `.glass-modal` to dostane.
+ * ========================================================================== */
+
+.glass-modal .table.dataTable,
+.glass-modal .dt-input {
+    --text-primary: var(--text-on-dark);
+    --text-secondary: var(--palette-slate-300);
+    --text-muted: var(--palette-slate-400);
+    --border-default: rgba(255, 255, 255, 0.10);
+    --surface-sunken: rgba(255, 255, 255, 0.04);
+    --clr-input-bg: rgba(255, 255, 255, 0.05);
+    --clr-input-focus-bg: rgba(255, 255, 255, 0.08);
+}
+
+.glass-modal .dt-paging-button:not(.current) {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.10);
+    color: var(--text-on-dark);
+}
+
+.glass-modal .dt-paging-button:hover:not(.disabled):not(.current) {
+    background-color: rgba(255, 255, 255, 0.10);
+    border-color: var(--accent-primary);
+}

@@ -1,0 +1,144 @@
+
+@keyframes shimmer {
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    background-color: var(--clr-skeleton-bg);
+    border-radius: var(--radius-sm);
+}
+
+.skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background-image: var(--clr-skeleton-shimmer);
+    animation: shimmer 2s infinite;
+}
+
+.skeleton-circle {
+    border-radius: 50%;
+}
+
+.skeleton-text {
+    height: 1rem;
+    margin-bottom: 0.5rem;
+    width: 100%;
+}
+
+
+/* ==========================================================================
+ *  2) Float — kruhové karty na dashboard plovou
+ *  Pomalá amplituda 6px (předtím 10px byla rušivá), pomalý cyklus 5s,
+ *  organický offset přes nth-child.
+ * ========================================================================== */
+
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-6px); }
+}
+
+/* Aplikace na karty s class="floating" — JS/Blade tuhle třídu přidá tam,
+   kde má smysl. Předtím se to dávalo na všechny .card-circle, což vedlo
+   k tomu, že počasí widget plaval taky (a u widgetu s pozorovaným časem
+   to bylo rušivé). */
+.floating {
+    animation: float 5s ease-in-out infinite;
+    will-change: transform;
+}
+
+.floating:nth-child(2n) { animation-delay: 0.4s; }
+.floating:nth-child(3n) { animation-delay: 0.9s; }
+.floating:nth-child(4n) { animation-delay: 1.3s; }
+
+
+/* ==========================================================================
+ *  3) Wave-pop — jednorázové "naskočení" karty pří načtení
+ *  Předtím byla nekonečně přehrávaná na .animated-circle-icons.
+ *  Teď běží JEN při entry (na load) a pak při hoveru přes Bootstrap-style
+ *  utility class.
+ * ========================================================================== */
+
+@keyframes wavePop {
+    0%   { transform: translateY(0)     scale(1); }
+    50%  { transform: translateY(-8px)  scale(1.06); }
+    100% { transform: translateY(0)     scale(1); }
+}
+
+.wave-pop {
+    animation: wavePop 0.5s ease-out;
+}
+
+.wave-pop-on-hover:hover {
+    animation: wavePop 0.4s ease-out;
+}
+
+
+/* ==========================================================================
+ *  4) Počasí — sluníčko, mraky, déšť
+ *  Tyhle MAJÍ smysl jako kontinuální animace (sémantická vazba na živel).
+ *  Sjednoceno na slušnější časování.
+ * ========================================================================== */
+
+@keyframes weather-sunny {
+    0%   { box-shadow: 0 0.25rem 0.3rem rgba(190, 204, 0, 0.5),
+                       0 0.25rem 0.8rem rgba(239, 202, 10, 0.49); }
+    100% { box-shadow: 0 0.25rem 0.3rem rgba(246, 234, 14, 0.5),
+                       0 0.25rem 0.8rem rgba(230, 218, 19, 0.58); }
+}
+
+@keyframes weather-cloudy {
+    0%   { box-shadow: 0 0.25rem 0.3rem rgba(0, 102, 204, 0.5),
+                       0 0.25rem 0.8rem rgba(255, 255, 255, 0.49); }
+    100% { box-shadow: 0 0.25rem 0.3rem rgba(0, 102, 204, 0.5),
+                       0 0.25rem 0.8rem rgba(255, 255, 255, 0.58); }
+}
+
+@keyframes weather-rain {
+    0%   { box-shadow: 0 0.25rem 0.3rem rgba(237, 232, 232, 0.57),
+                       0 0.25rem 0.8rem rgba(158, 161, 239, 0.49); }
+    100% { box-shadow: 0 0.25rem 0.3rem rgba(237, 232, 232, 0.57),
+                       0 0.25rem 0.8rem rgba(123, 143, 202, 0.564); }
+}
+
+.shadow-sunny        { animation: weather-sunny  10s ease-in-out infinite alternate; }
+.shadow-partly-cloudy{ animation: weather-cloudy 10s ease-in-out infinite alternate; }
+.shadow-cloudy-rain  { animation: weather-rain   3s  ease-in-out infinite alternate; }
+.shadow-snow         { box-shadow: 0 0 15px rgba(255, 255, 255, 0.93); }
+
+
+/* ==========================================================================
+ *  5) Respektovat prefers-reduced-motion
+ *  Uživatel s vestibulární poruchou nebo s nastavením OS "redukovat
+ *  animace" by neměl vidět nic, co se hýbe bezdůvodně.
+ *  Skeleton shimmer ponecháváme (signalizuje "načítání"), ale plovoucí
+ *  animace a počasí vypneme.
+ * ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+
+    .floating,
+    .shadow-sunny,
+    .shadow-partly-cloudy,
+    .shadow-cloudy-rain {
+        animation: none !important;
+    }
+
+    .wave-pop,
+    .wave-pop-on-hover:hover {
+        animation: none !important;
+    }
+
+    /* Transition timing zkrátíme na minimum, ale nezachováváme okamžité
+       state-jumpy chování — jen rychlejší fade. */
+    *,
+    *::before,
+    *::after {
+        transition-duration: 0.01ms !important;
+    }
+}

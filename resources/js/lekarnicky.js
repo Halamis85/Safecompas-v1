@@ -1,5 +1,6 @@
 import * as bootstrap from 'bootstrap';
 import Chart from 'chart.js/auto';
+import DataTable from 'datatables.net-dt';
 import { initPlanBudovy } from './plan-budovy.js';
 
 
@@ -94,7 +95,7 @@ export function lekarnicky() {
     // Načtení dashboardu
     async function loadDashboard() {
         const loadingIndicator = document.getElementById('loading-indicator');
-        loadingIndicator.style.display = 'block';
+        if (loadingIndicator) loadingIndicator.style.display = 'block';
 
         try {
             const data = await apiCall('/api/lekarnicke/dashboard');
@@ -114,11 +115,11 @@ export function lekarnicky() {
             console.error('Chyba při načítání dashboard:', error);
             showNotification('Chyba při načítání dat', 'error');
         } finally {
-            loadingIndicator.style.display = 'none';
+            if (loadingIndicator) loadingIndicator.style.display = 'none';
         }
     }
 
-      // Plán budovy - inicializace jednou, pak se rerendruje při show.bs.modal
+    // Plán budovy - inicializace jednou, pak se rerendruje při show.bs.modal
     let planBudovy = null;
     function initOrRefreshPlan() {
         if (!planBudovy) {
@@ -126,7 +127,7 @@ export function lekarnicky() {
                 apiCall,
                 showNotification,
                 getLekarnicky: () => appData.lekarnicke,
-                openDetailLekarnicky: window.viewLekarnicky,
+                openDetailLekarnicky: viewLekarnicky,
             });
         } else if (planBudovy.rerender) {
             planBudovy.rerender();
@@ -163,7 +164,7 @@ export function lekarnicky() {
     }
 
     // Zobrazení sekce
-        function showSection(section) {
+    function showSection(section) {
         appData.currentSection = section;
 
         // Plán budovy - otevři modal
@@ -203,21 +204,6 @@ export function lekarnicky() {
             }, { once: true });
             modal.show();
             return;
-        }
-    }
-
-    // Načtení dat aktuální sekce
-    function loadCurrentSection() {
-        switch (appData.currentSection) {
-            case 'material':
-                loadMaterial();
-                break;
-            case 'urazy':
-                loadUrazy();
-                break;
-            case 'vykazy':
-                setupVykazy();
-                break;
         }
     }
 
@@ -282,10 +268,10 @@ export function lekarnicky() {
                 </div>
                 <div class="card-footer">
                     <div class="btn-group w-100">
-                        <button class="btn btn-outline-primary btn-sm" onclick="viewLekarnicky(${lekarnicky.id})">
+                        <button class="btn btn-outline-primary btn-sm" data-action="view-lekarnicky" data-id="${lekarnicky.id}">
                             <i class="fa-solid fa-eye"></i> Detail
                         </button>
-                        <button class="btn btn-outline-success btn-sm" onclick="kontrolaLekarnicky(${lekarnicky.id})">
+                        <button class="btn btn-outline-success btn-sm" data-action="kontrola-lekarnicky" data-id="${lekarnicky.id}">
                             <i class="fa-solid fa-check"></i> Kontrola
                         </button>
                     </div>
@@ -303,53 +289,11 @@ export function lekarnicky() {
             const data = await apiCall('/api/lekarnicke/dashboard');
             appData.lekarnicke = data.lekarnicke || [];
             appData.stats = data.statistiky || {};
-            
+
             updateMaterialFilter();
             renderMaterialTable();
         } catch (e) {
             console.error("Chyba při aktualizaci materiálu", e);
-        }
-    }
-
-    // Vykreslení tabulky materiálu
-    function renderMaterialTable() {
-        const tbody = document.getElementById('material-tbody');
-        if (!tbody) return;
-
-        // Zrušit starou instanci DataTables (pokud existuje)
-        if ($.fn.DataTable && $.fn.DataTable.isDataTable('#materialTable')) {
-            $('#materialTable').DataTable().destroy();
-            $(tbody).empty();
-        }
-
-        const materialList = appData.lekarnicke.flatMap(l => 
-            (l.material || []).map(m => ({ ...m, lekarnicky_nazev: l.nazev }))
-        );
-
-
-        // Kontrola existence souboru s českým překladem
-        const tableConfig = {
-            responsive: true,
-            pageLength: 25
-        };
-
-        // Přidat český překlad pokud existuje
-        if (typeof $ !== 'undefined') {
-            $.ajax({
-                url: '/assets/cs.json',
-                async: false,
-                success: function() {
-                    tableConfig.language = { url: '/assets/cs.json' };
-                },
-                error: function() {
-                    // Český překlad není k dispozici, použít výchozí
-                    console.log('Český překlad pro DataTables není k dispozici');
-                }
-            });
-        }
-
-        if ($.fn.DataTable) {
-            $('#materialTable').DataTable(tableConfig);
         }
     }
 
@@ -373,12 +317,15 @@ export function lekarnicky() {
         const tbody = document.getElementById('material-tbody');
         if (!tbody) return;
 
-        // Zrušit starou instanci DataTables (pokud existuje)
-        if ($.fn.DataTable && $.fn.DataTable.isDataTable('#materialTable')) {
-            $('#materialTable').DataTable().destroy();
-            $(tbody).empty();
+        const materialTableEl = document.getElementById('materialTable');
+
+        // Zrušit starou instanci DataTables (pokud existuje).
+        // V "datatables.net-dt" je isDataTable statická metoda na importu.
+        if (materialTableEl && DataTable.isDataTable(materialTableEl)) {
+            new DataTable(materialTableEl).destroy();
         }
 
+        // Vyčistit tbody před vykreslením nových řádků
         tbody.innerHTML = '';
 
         // Získání všech materiálů ze všech lékárniček
@@ -408,14 +355,13 @@ export function lekarnicky() {
             tbody.appendChild(row);
         });
 
-        // Inicializace DataTable
-        if ($.fn.DataTable) {
-            const tableConfig = {
+        // Inicializace DataTable nad vyplněnou tabulkou
+        if (materialTableEl) {
+            new DataTable(materialTableEl, {
                 responsive: true,
                 pageLength: 25,
-                language: { url: '/assets/cs.json' }
-            };
-            $('#materialTable').DataTable(tableConfig);
+                language: { url: '/assets/cs.json' },
+            });
         }
     }
 
@@ -460,10 +406,10 @@ export function lekarnicky() {
             <td class="text-center">${statusBadge}</td>
             <td class="text-end px-4">
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-link text-primary p-0 me-3" onclick="editMaterial(${material.id})">
+                    <button class="btn btn-link text-primary p-0 me-3" data-action="edit-material" data-id="${material.id}">
                         <i class="fa-solid fa-pen-to-square fs-5"></i>
                     </button>
-                    <button class="btn btn-link text-danger p-0" onclick="deleteMaterial(${material.id})">
+                    <button class="btn btn-link text-danger p-0" data-action="delete-material" data-id="${material.id}">
                         <i class="fa-solid fa-trash-can fs-5"></i>
                     </button>
                 </div>
@@ -479,8 +425,8 @@ export function lekarnicky() {
         if (!tableEl) return;
 
         // Zničit starou instanci, pokud existuje
-        if ($.fn.DataTable && $.fn.DataTable.isDataTable('#urazyTable')) {
-            $('#urazyTable').DataTable().destroy();
+        if (DataTable.isDataTable(tableEl)) {
+            new DataTable(tableEl).destroy();
             // Vyčistit tbody, aby si DataTable nesahal na staré řádky
             const oldTbody = tableEl.querySelector('tbody');
             if (oldTbody) oldTbody.innerHTML = '';
@@ -510,7 +456,7 @@ export function lekarnicky() {
         };
 
         // Inicializace DataTable s daty - DataTable si řídí render řádků sám
-        $('#urazyTable').DataTable({
+        new DataTable(tableEl, {
             data: urazy,
             responsive: true,
             pageLength: 10,
@@ -566,7 +512,7 @@ export function lekarnicky() {
                     render: function (id) {
                         return `
                             <button class="btn btn-link text-danger p-0"
-                                    onclick="deleteUraz(${id})"
+                                    data-action="delete-uraz" data-id="${id}"
                                     title="Smazat záznam">
                                 <i class="fa-solid fa-trash-can fs-5"></i>
                             </button>
@@ -575,17 +521,6 @@ export function lekarnicky() {
                 },
             ],
         });
-    }
-    // Nastavení výkazů
-    function setupVykazy() {
-        const today = new Date();
-        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-
-        const exportOdEl = document.getElementById('export-od');
-        const exportDoEl = document.getElementById('export-do');
-
-        if (exportOdEl) exportOdEl.value = firstDay.toISOString().split('T')[0];
-        if (exportDoEl) exportDoEl.value = today.toISOString().split('T')[0];
     }
 
     // ========== OPRAVENÉ MODAL FUNKCE ==========
@@ -620,6 +555,7 @@ export function lekarnicky() {
             }
         }, 5000);
     }
+
     // ========== POMOCNÉ FUNKCE ==========
 
     function closeModal(modalId) {
@@ -671,8 +607,8 @@ export function lekarnicky() {
             console.error('Chyba při načítání zaměstnanců:', error);
         }
     }
-    
-    //Naplní select kandidáty na vlastníka lékárničky.
+
+    // Naplní select kandidáty na vlastníka lékárničky.
     async function populateOwnersSelect(selectId) {
         const select = document.getElementById(selectId);
         if (!select) return;
@@ -709,9 +645,12 @@ export function lekarnicky() {
     function resetMaterialForm() {
         const form = document.getElementById('material-form');
         if (form) form.reset();
-        document.getElementById('material-id').value = '';
-        document.getElementById('materialModalTitle').textContent = 'Přidat materiál';
-        document.getElementById('material-submit-btn').textContent = 'Uložit';
+        const idEl = document.getElementById('material-id');
+        if (idEl) idEl.value = '';
+        const titleEl = document.getElementById('materialModalTitle');
+        if (titleEl) titleEl.textContent = 'Přidat materiál';
+        const submitBtn = document.getElementById('material-submit-btn');
+        if (submitBtn) submitBtn.textContent = 'Uložit';
     }
 
     // ========== HANDLERY MODALŮ ==========
@@ -751,6 +690,10 @@ export function lekarnicky() {
                 closeModal('addMaterialModal');
                 resetMaterialForm();
                 await loadDashboard();
+                // Pokud je seznam materiálu otevřený, překreslíme i jeho tabulku.
+                if (document.getElementById('material-tbody')) {
+                    renderMaterialTable();
+                }
             } else {
                 showNotification(result.message || 'Chyba při ukládání', 'error');
             }
@@ -845,20 +788,18 @@ export function lekarnicky() {
         modal.show();
     }
 
-    // ========== GLOBÁLNÍ FUNKCE ==========
+    // ========== AKCE NAD ZÁZNAMY ==========
 
-    // Globální funkce pro onclick handlery
-
-    window.viewLekarnicky = async function(id) {
+    async function viewLekarnicky(id) {
         try {
             const data = await apiCall(`/api/lekarnicke/${id}`);
             openDetailLekarnicky(data);
         } catch (error) {
             console.error('Chyba při načítání detailu:', error);
         }
-    };
+    }
 
-    window.kontrolaLekarnicky = async function(id) {
+    async function kontrolaLekarnicky(id) {
         if (!confirm('Opravdu chcete zaznamenat kontrolu této lékárničky?')) {
             return;
         }
@@ -875,9 +816,9 @@ export function lekarnicky() {
         } catch (error) {
             console.error('Chyba při kontrole lékárničky:', error);
         }
-    };
+    }
 
-window.editMaterial = async function(id) {
+    async function editMaterial(id) {
         // Najdi materiál v appData
         let material = null;
         let lekarnickyId = null;
@@ -918,9 +859,9 @@ window.editMaterial = async function(id) {
         });
 
         modal.show();
-    };
+    }
 
-    window.deleteMaterial = async function(id) {
+    async function deleteMaterial(id) {
         if (!confirm('Opravdu chcete smazat tento materiál?')) {
             return;
         }
@@ -933,12 +874,16 @@ window.editMaterial = async function(id) {
             if (result.success) {
                 showNotification(result.message, 'success');
                 await loadDashboard();
+                if (document.getElementById('material-tbody')) {
+                    renderMaterialTable();
+                }
             }
         } catch (error) {
             console.error('Chyba při mazání materiálu:', error);
         }
-    };
-    window.deleteUraz = async function(id) {
+    }
+
+    async function deleteUraz(id) {
         if (!confirm('Opravdu chcete smazat tento záznam úrazu?')) return;
 
         try {
@@ -948,17 +893,50 @@ window.editMaterial = async function(id) {
             if (result.success) {
                 showNotification(result.message || 'Záznam smazán', 'success');
                 await loadUrazy();
-                await loadDashboard(); // aktualizuj počet úrazů v dashboard statistice
+                await loadDashboard();
             }
         } catch (error) {
             console.error('Chyba při mazání úrazu:', error);
         }
-    };
+    }
 
     // ========== EVENT LISTENERY ==========
 
     // Event listenery
     function setupEventListeners() {
+        // Delegace pro karty lékárniček
+        const lekarnickeList = document.getElementById('lekarnicke-list');
+        if (lekarnickeList) {
+            lekarnickeList.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                const id = parseInt(btn.dataset.id);
+                if (btn.dataset.action === 'view-lekarnicky') viewLekarnicky(id);
+                if (btn.dataset.action === 'kontrola-lekarnicky') kontrolaLekarnicky(id);
+            });
+        }
+
+        // Delegace pro tabulku materiálu (modal)
+        const materialModal = document.getElementById('materialModalList');
+        if (materialModal) {
+            materialModal.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-action]');
+                if (!btn) return;
+                const id = parseInt(btn.dataset.id);
+                if (btn.dataset.action === 'edit-material') editMaterial(id);
+                if (btn.dataset.action === 'delete-material') deleteMaterial(id);
+            });
+        }
+
+        // Delegace pro tabulku úrazů (modal) — funguje i po překreslení DataTables
+        const urazyModal = document.getElementById('urazyModalList');
+        if (urazyModal) {
+            urazyModal.addEventListener('click', (e) => {
+                const btn = e.target.closest('[data-action="delete-uraz"]');
+                if (btn) deleteUraz(parseInt(btn.dataset.id));
+            });
+        }
+
         // Navigace mezi sekcemi
         document.querySelectorAll('.navigation-card').forEach(card => {
             card.addEventListener('click', (e) => {
@@ -966,15 +944,120 @@ window.editMaterial = async function(id) {
                 showSection(section);
             });
         });
+
+        // Filter materiálu podle lékárničky
+        const materialFilter = document.getElementById('material-lekarnicky-filter');
+        if (materialFilter) {
+            materialFilter.addEventListener('change', (e) => {
+                filterMaterial(e.target.value);
+            });
+        }
+
+        // Form submit pro přidání lékárničky
+        const addLekarnickForm = document.getElementById('add-lekarnicky-form');
+        if (addLekarnickForm) {
+            addLekarnickForm.addEventListener('submit', handleAddLekarnicky);
+        }
+
+        // Form submit pro přidání / editaci materiálu
+        const materialForm = document.getElementById('material-form');
+        if (materialForm) {
+            materialForm.addEventListener('submit', handleMaterialSubmit);
+        }
+
+        // Form submit pro záznam úrazu
+        const urazForm = document.getElementById('uraz-form');
+        if (urazForm) {
+            urazForm.addEventListener('submit', handleAddUraz);
+        }
+
+        // Před otevřením modalu materiálu naplníme seznam lékárniček
+        const addMaterialModal = document.getElementById('addMaterialModal');
+        if (addMaterialModal) {
+            addMaterialModal.addEventListener('show.bs.modal', (e) => {
+                // Pokud se modal otevírá tlačítkem "Přidat materiál", zresetujeme formulář
+                const button = e.relatedTarget;
+                if (button && button.getAttribute('data-bs-target') === '#addMaterialModal') {
+                    resetMaterialForm();
+                }
+                populateLekarnickySelect('material-lekarnicky-select');
+            });
+        }
+
+        // Před otevřením modalu úrazu načteme zaměstnance i lékárničky
+        const addUrazModal = document.getElementById('addUrazModal');
+        if (addUrazModal) {
+            addUrazModal.addEventListener('show.bs.modal', () => {
+                populateLekarnickySelect('uraz-lekarnicky-select');
+                populateZamestnanciSelect('uraz-zamestnanec-select');
+            });
+        }
+
+        // Event listener pro zodpovědná osoba za lékarniku
+        const addLekarnickModal = document.getElementById('addLekarnickModal');
+        if (addLekarnickModal) {
+            addLekarnickModal.addEventListener('show.bs.modal', () => {
+                populateOwnersSelect('lekarnicky-owner-select');
+            });
+        }
     }
 
-    // Nastavení výkazů a statistik
+    // Filter materiálu
+    function filterMaterial(lekarnicky_id) {
+        const rows = document.querySelectorAll('#material-tbody tr');
+
+        if (!lekarnicky_id) {
+            rows.forEach(row => row.style.display = '');
+            return;
+        }
+
+        const selectedLekarnicky = appData.lekarnicke.find(l => l.id == lekarnicky_id);
+        if (!selectedLekarnicky) return;
+
+        // Skrýt všechny řádky
+        rows.forEach(row => row.style.display = 'none');
+
+        // Zobrazit pouze řádky s materiály z vybrané lékárničky
+        selectedLekarnicky.material?.forEach(material => {
+            // Najít řádek obsahující název materiálu
+            rows.forEach(row => {
+                if (row.textContent.includes(material.nazev_materialu)) {
+                    row.style.display = '';
+                }
+            });
+        });
+    }
+
+    // Handler pro export výkazu
+    async function handleExportVykaz() {
+        const odEl = document.getElementById('export-od');
+        const doEl = document.getElementById('export-do');
+
+        if (!odEl || !doEl) {
+            showNotification('Chyba: Formulář není k dispozici', 'error');
+            return;
+        }
+
+        const od = odEl.value;
+        const do_date = doEl.value;
+
+        try {
+            const result = await apiCall(`/api/lekarnicke/export-vykaz?od=${od}&do=${do_date}`);
+            console.log('Export data:', result);
+            showNotification('Výkaz byl vygenerován', 'success');
+        } catch (error) {
+            console.error('Chyba při exportu výkazu:', error);
+        }
+    }
+
+    // ========== VÝKAZY (statistiky + grafy + export) ==========
+
     function setupVykazy() {
         const miniCardsContainer = document.getElementById('stats-mini-cards');
         if (!miniCardsContainer) return;
 
         const stats = appData.stats;
-        
+
         // Vykreslení horních karet
         miniCardsContainer.innerHTML = `
             <div class="col-md-3">
@@ -1003,10 +1086,19 @@ window.editMaterial = async function(id) {
             </div>
         `;
 
+        // Předvyplnění období pro export (od 1. dne aktuálního měsíce do dnes)
+        const today = new Date();
+        const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+        const exportOdEl = document.getElementById('export-od');
+        const exportDoEl = document.getElementById('export-do');
+        if (exportOdEl) exportOdEl.value = firstDay.toISOString().split('T')[0];
+        if (exportDoEl) exportDoEl.value = today.toISOString().split('T')[0];
+
         // Inicializace grafů
         renderCharts();
 
-        // Event listener pro export
+        // Event listener pro export (přepisujeme onclick, ne addEventListener,
+        // aby se netvořilo víc handlerů při opakovaném otevření modalu)
         const exportBtn = document.getElementById('export-vykaz');
         if (exportBtn) {
             exportBtn.onclick = async () => {
@@ -1045,6 +1137,7 @@ window.editMaterial = async function(id) {
 
             // Zničit staré grafy pokud existují
             Object.values(charts).forEach(c => c.destroy());
+            charts = {};
 
             // 1. Trend úrazů (Line Chart)
             const ctxInjuries = document.getElementById('injuriesChart');
@@ -1095,7 +1188,7 @@ window.editMaterial = async function(id) {
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { 
+                        plugins: {
                             legend: { position: 'bottom', labels: { color: colors.text, padding: 20 } }
                         },
                         cutout: '70%'
@@ -1103,7 +1196,7 @@ window.editMaterial = async function(id) {
                 });
             }
 
-            // 3. Kontroly (Bar Chart) - Vylepšeno na reálná data (Pending vs Done)
+            // 3. Kontroly (Bar Chart) - Pending vs Done
             const ctxInspections = document.getElementById('inspectionsChart');
             if (ctxInspections) {
                 charts.inspections = new Chart(ctxInspections, {
@@ -1120,7 +1213,7 @@ window.editMaterial = async function(id) {
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        indexAxis: 'y', // Horizontální graf
+                        indexAxis: 'y',
                         plugins: { legend: { display: false } },
                         scales: {
                             x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: colors.text, stepSize: 1 } },
@@ -1134,119 +1227,9 @@ window.editMaterial = async function(id) {
             showNotification('Nepodařilo se načíst data pro grafy', 'error');
         }
     }
-        // Filter materiálu podle lékárničky
-        const materialFilter = document.getElementById('material-lekarnicky-filter');
-        if (materialFilter) {
-            materialFilter.addEventListener('change', (e) => {
-                filterMaterial(e.target.value);
-            });
-        }
 
-        // Export výkazu
-        const exportBtn = document.getElementById('export-vykaz');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', handleExportVykaz);
-        }
+    // ========== HANDLER PRO PŘIDÁNÍ LÉKÁRNIČKY ==========
 
-        // Form submit pro přidání lékárničky
-        const addLekarnickForm = document.getElementById('add-lekarnicky-form');
-        if (addLekarnickForm) {
-            addLekarnickForm.addEventListener('submit', handleAddLekarnicky);
-        }
-
-// Form submit pro přidání / editaci materiálu
-        const materialForm = document.getElementById('material-form');
-        if (materialForm) {
-            materialForm.addEventListener('submit', handleMaterialSubmit);
-        }
-
-        // Form submit pro záznam úrazu
-        const urazForm = document.getElementById('uraz-form');
-        if (urazForm) {
-            urazForm.addEventListener('submit', handleAddUraz);
-        }
-
-        // Před otevřením modalu materiálu naplníme seznam lékárniček
-        const addMaterialModal = document.getElementById('addMaterialModal');
-        if (addMaterialModal) {
-            addMaterialModal.addEventListener('show.bs.modal', (e) => {
-                // Pokud se modal otevírá tlačítkem "Přidat materiál", zresetujeme formulář
-                const button = e.relatedTarget;
-                if (button && button.getAttribute('data-bs-target') === '#addMaterialModal') {
-                    resetMaterialForm();
-                }
-                populateLekarnickySelect('material-lekarnicky-select');
-            });
-        }
-
-        // Před otevřením modalu úrazu načteme zaměstnance i lékárničky
-        const addUrazModal = document.getElementById('addUrazModal');
-        if (addUrazModal) {
-            addUrazModal.addEventListener('show.bs.modal', () => {
-                populateLekarnickySelect('uraz-lekarnicky-select');
-                populateZamestnanciSelect('uraz-zamestnanec-select');
-            });
-        }
-
-        // Event listener pro zodpovědná osoba za lékarniku 
-        const addLekarnickModal = document.getElementById('addLekarnickModal');
-        if (addLekarnickModal) {
-            addLekarnickModal.addEventListener('show.bs.modal', () => {
-                populateOwnersSelect('lekarnicky-owner-select');
-            });
-        }
-
-    // Filter materiálu
-    function filterMaterial(lekarnicky_id) {
-        const rows = document.querySelectorAll('#material-tbody tr');
-
-        if (!lekarnicky_id) {
-            rows.forEach(row => row.style.display = '');
-            return;
-        }
-
-        const selectedLekarnicky = appData.lekarnicke.find(l => l.id == lekarnicky_id);
-        if (!selectedLekarnicky) return;
-
-        // Skrýt všechny řádky
-        rows.forEach(row => row.style.display = 'none');
-
-        // Zobrazit pouze řádky s materiály z vybrané lékárničky
-        selectedLekarnicky.material?.forEach(material => {
-            // Najít řádek obsahující název materiálu
-            rows.forEach(row => {
-                if (row.textContent.includes(material.nazev_materialu)) {
-                    row.style.display = '';
-                }
-            });
-        });
-    }
-
-    // Handler pro export výkazu
-    async function handleExportVykaz() {
-        const odEl = document.getElementById('export-od');
-        const doEl = document.getElementById('export-do');
-
-        if (!odEl || !doEl) {
-            showNotification('Chyba: Formulář není k dispozici', 'error');
-            return;
-        }
-
-        const od = odEl.value;
-        const do_date = doEl.value;
-
-        try {
-            const result = await apiCall(`/api/lekarnicke/export-vykaz?od=${od}&do=${do_date}`);
-            console.log('Export data:', result);
-            showNotification('Výkaz byl vygenerován', 'success');
-        } catch (error) {
-            console.error('Chyba při exportu výkazu:', error);
-        }
-    }
-
-    // ========== OPRAVENÝ HANDLER PRO PŘIDÁNÍ LÉKÁRNIČKY ==========
-
-    // Handler pro přidání lékárničky - OPRAVENO
     async function handleAddLekarnicky(e) {
         e.preventDefault();
         console.log('Odesílám formulář lékárničky...');
@@ -1254,49 +1237,31 @@ window.editMaterial = async function(id) {
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData);
 
-        console.log('Data k odeslání:', data);
-
         try {
             const result = await apiCall('/api/lekarnicke', {
                 method: 'POST',
                 body: JSON.stringify(data)
             });
 
-            console.log('Výsledek API:', result);
-
             if (result.success) {
-                // JEDNODUCHÉ a SPOLEHLIVÉ zavření modalu
+                // Spolehlivé zavření modalu (i když by Bootstrap dělal potíže)
                 const modal = document.getElementById('addLekarnickModal');
                 if (modal) {
-                    // Skrýt modal
                     modal.style.display = 'none';
                     modal.classList.remove('show');
                     modal.setAttribute('aria-hidden', 'true');
                     modal.removeAttribute('aria-modal');
 
-                    // Odebrat backdrop
                     const backdrop = document.querySelector('.modal-backdrop');
-                    if (backdrop) {
-                        backdrop.remove();
-                    }
+                    if (backdrop) backdrop.remove();
 
-                    // Obnovit body stav
                     document.body.classList.remove('modal-open');
                     document.body.style.overflow = '';
                     document.body.style.paddingRight = '';
-
-                    console.log('Modal zavřen úspěšně');
                 }
 
-                // Reset formuláře
                 e.target.reset();
-                console.log('Formulář resetován');
-
-                // Zobrazit úspěšnou zprávu
                 showNotification(result.message || 'Lékárnička byla úspěšně přidána', 'success');
-
-                // Znovu načíst dashboard
-                console.log('Načítám dashboard...');
                 await loadDashboard();
 
             } else {
@@ -1310,8 +1275,6 @@ window.editMaterial = async function(id) {
 
     // ========== INICIALIZACE ==========
 
-    // Inicializace
     setupEventListeners();
     loadDashboard();
 }
-

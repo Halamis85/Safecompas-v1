@@ -1,4 +1,20 @@
 @import "bootstrap";
+
+/* FontAwesome — jen CSS verze. Všechny ikony (fa-solid, fa-regular, fa-brands)
+   fungují stejně jako dřív, ale bez 700 KB JS, který přepisoval <i> tagy. */
+@import "@fortawesome/fontawesome-free/css/fontawesome.min.css";
+@import "@fortawesome/fontawesome-free/css/solid.min.css";
+@import "@fortawesome/fontawesome-free/css/regular.min.css";
+@import "@fortawesome/fontawesome-free/css/brands.min.css";
+@import "@fortawesome/fontawesome-free/css/v4-shims.min.css";
+@import "./tokens.css"; 
+@import"./tables.css";
+@import "./forms.css";
+@import"./surfaces.css";
+@import "./buttons.css";       
+@import "./navigation.css";
+@import "./animations.css";   
+@import "./dashboard.css"; 
 @import "./style.css";
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';

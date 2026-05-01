@@ -6,15 +6,18 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="session-lifetime" content="{{ (int) config('session.lifetime') * 60 }}">
     <meta name="current-user-id" content="{{ session('user.id', '') }}">
+    <meta name="csp-nonce" content="{{ csp_nonce() }}">
     <meta name="current-user-is-super-admin" content="{{ session('user.is_super_admin') ? 'true' : 'false' }}">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Aplikace pro správu OOPP.">
+    <meta name="description" content="Aplikace Safecompas.">
     <meta name="robots" content="noindex">
     <meta name="author" content="Lukáš Halamka for Safecompas">
     <title>@yield('title', 'Safecompas')</title>
+    @include('partials.head-perf')
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body id="app-body" class="d-flex flex-column vh-100 @yield('body-class')" data-page="">
+@include('partials.body-perf')
 <header class="navbar navbar-expand-lg border-bottom sticky-top">
     <div class="container-fluid">
         <nav class="d-flex w-100 justify-content-between align-items-center">

@@ -15,8 +15,9 @@ class StoreObjednavkaRequest extends FormRequest
     {
         return [
             'zamestnanec_id' => 'required|exists:zamestnanci,id',
-            'produkt_id' => 'required|exists:produkty,id',
-            'velikost' => 'required|string|max:255'
+            'produkt_id'     => 'required|exists:produkty,id',
+            'velikost'       => 'required|string|max:255',
+            'pocet_kusu'     => 'nullable|integer|min:1|max:999',
         ];
     }
 

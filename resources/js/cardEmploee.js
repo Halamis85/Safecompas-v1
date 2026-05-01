@@ -1,15 +1,4 @@
-import DataTable from 'datatables.net'; // Základní DataTables
-import 'datatables.net-buttons';
-import 'datatables.net-buttons/js/buttons.html5.js';
-import 'datatables.net-buttons/js/buttons.print.js'
-import JSZip from "jszip";
-import pdfMake from 'pdfmake'; // Potřeba pro PDF export
-import pdfFonts from "pdfmake/build/vfs_fonts";
-
-pdfMake.addVirtualFileSystem(pdfFonts);
-
-window.JSZip = JSZip;
-window.pdfMake = pdfMake;
+import DataTable from 'datatables.net-dt';
 
 function displayMessage(message, isSuccess = true) {
     const zpravaPri = document.getElementById('zprava-pri');
@@ -203,6 +192,12 @@ async function handleFetchResponse(response) {
         closeB.classList.remove('d-none');
         selectedEmployee.innerHTML = `<div class="cards-text-info">Zaměstnanci
             <span class="cards-text-info-bold">${jmeno} ${prijemni}</span> bylo přiděleno:</div>`;
+        // Tlačítko pro export karty zaměstnance do XLSX
+        const exportBtn = document.createElement('a');
+        exportBtn.href = `/export/karta-zamestnance/${zamestnanecId}.xlsx`;
+        exportBtn.className = 'btn btn-sm btn-outline-success mt-2';
+        exportBtn.innerHTML = '<i class="fa-solid fa-file-excel me-1"></i> Stáhnout do Excelu';
+        selectedEmployee.appendChild(exportBtn);
         selectedEmployee.classList.remove('d-none');
 
         // KROK 2: Vytvoř novou HTML strukturu tabulky od základu
@@ -217,6 +212,7 @@ async function handleFetchResponse(response) {
                 <tr>
                     <th class="text-center">Produkt</th>
                     <th class="text-center">Velikost</th>
+                    <th class="text-center">Počet ks</th>
                     <th class="text-center">Datum vydání</th>
                     <th class="text-center">Podpis</th>
                 </tr>
@@ -237,6 +233,7 @@ async function handleFetchResponse(response) {
                         const row = orderListBody.insertRow();
                         row.insertCell().textContent = order.produkt;
                         row.insertCell().textContent = order.velikost;
+                        row.insertCell().textContent = order.pocet_kusu ?? 1;
                         row.insertCell().textContent = order.datum_vydani;
                         const podpisCell = row.insertCell();
                         podpisCell.innerHTML = order.podpis_path
@@ -255,26 +252,9 @@ async function handleFetchResponse(response) {
                         info: false,
                         responsive: true,
                         dom:
-                            "<'row align-items-center me-2'<'col-auto'B><'col text-end'f mb-2>>" + // Horní řádek
+                            "<'row align-items-center me-2'<'col text-end'f mb-2>>" +
                             "<'table-responsive't>" +
-                            "<'row align-items-center mt-2 mb-2'<'col text-center'p>>", // Ponecháme vestavěné vyhledávání
-                        buttons: [
-                            {
-                                extend: 'excelHtml5', text: '<img src="/images/excel%20(2).svg" ' +
-                                    'alt="Excel" width="30">', titleAttr: 'Exportovat tabulku do Exlu'
-                                , className: 'btn p-0 m-2'
-                            },
-                            {
-                                extend: 'pdfHtml5', text: '<img src="/images/PDF.svg" ' +
-                                    'alt="PDF" width="30">', titleAttr: 'Exportovat tabulku do PDF'
-                                , className: 'btn p-0 m-2'
-                            },
-                            {
-                                extend: 'print', text: '<img src="/images/printer.svg" ' +
-                                    'alt="PDF" width="30">', titleAttr: 'Vytisknout tabulku '
-                                , className: 'btn p-0 m-2'
-                            }
-                        ], // Předáváme DataTables načtená data
+                            "<'row align-items-center mt-2 mb-2'<'col text-center'p>>",
                         language: {
                             url: "/assets/cs.json"
                         }
@@ -283,7 +263,7 @@ async function handleFetchResponse(response) {
                     console.log("DataTables inicializováno na nové tabulce.");
                 } else {
                     // Pokud nejsou objednávky, zobraz zprávu přímo v tbody a DataTables neinicializuj
-                    orderListBody.innerHTML = '<tr><td colspan="4">Žádné objednávky nebyly nalezeny</td></tr>';
+                    orderListBody.innerHTML = '<tr><td colspan="5">Žádné objednávky nebyly nalezeny</td></tr>';
                     console.log("Žádné objednávky nebyly nalezeny.");
                     // Tabulka zůstane obyčejná HTML tabulka
                 }

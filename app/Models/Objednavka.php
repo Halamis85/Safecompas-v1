@@ -14,10 +14,11 @@ class Objednavka extends Model
         'zamestnanec_id',
         'produkt_id',
         'velikost',
+        'pocet_kusu',
         'datum_objednani',
         'datum_vydani',
         'status',
-        'podpis_path'
+        'podpis_path',
     ];
 
     protected $casts = [

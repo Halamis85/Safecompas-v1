@@ -45,6 +45,12 @@ class NotificationBell {
         if (dropdown) {
             dropdown.addEventListener('shown.bs.dropdown', () => this.loadNotifications());
         }
+        if (this.container) {
+            this.container.addEventListener('click', (e) => {
+                const item = e.target.closest('[data-action="mark-read"]');
+                if (item) this.markAsRead(item.dataset.id);
+            });
+        }
     }
 
     async loadNotifications() {
@@ -97,7 +103,7 @@ class NotificationBell {
      */
     renderMedia(data) {
         if (data.img) {
-            return `<img src="/images/OOPP/${encodeURIComponent(data.img)}" alt="" class="rounded-circle produck-circle-notific" style="width: 50px; height: 50px; object-fit: contain;">`;
+            return `<img src="/images/OOPP/${encodeURIComponent(data.img.trim())}" alt="" class="rounded-circle produck-circle-notific" style="width: 50px; height: 50px; object-fit: contain;">`;
         }
         const icon = data.icon || 'fa-solid fa-bell';
         return `
@@ -134,7 +140,7 @@ class NotificationBell {
             return `
                 <div class="notification-item ${isUnread ? 'unread' : 'read'}"
                      data-id="${notification.id}"
-                     onclick="notificationBell.markAsRead('${notification.id}')">
+                     data-action="mark-read">
                     <div class="d-flex">
                         <div class="notification-icon${color}">
                             ${media}

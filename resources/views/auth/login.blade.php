@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex">
+    <meta name="csp-nonce" content="{{ csp_nonce() }}">
     <title>Přihlášení – Safecompas</title>
+    @include('partials.head-perf') 
     @vite(['resources/css/app.css','resources/css/login.css', 'resources/js/app.js', 'resources/js/login.js'])
 </head>
 <body class="login-page">
-
+@include('partials.body-perf')
 <main class="login-wrap">
     <section class="login-card" aria-labelledby="login-heading">
         <div class="login-brand">

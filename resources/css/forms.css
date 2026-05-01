@@ -1,0 +1,259 @@
+/* ==========================================================================
+ *  Safecompas — Forms (Restart 2)
+ *
+ *  Cíl:
+ *  - Vyhodit `!important` z form-control / form-select bloku
+ *  - Sjednotit focus ring napříč všemi inputy (akcentová barva)
+ *  - Form-label, form-text, validace
+ *  - Glass-input (uvnitř modálů) reaguje na kontext, ne na vlastní třídu
+ * ========================================================================== */
+
+
+/* ==========================================================================
+ *  1) Labels
+ * ========================================================================== */
+
+.form-label {
+    color: var(--text-secondary);
+    font-weight: var(--font-medium);
+    font-size: var(--text-sm);
+    margin-bottom: 0.4rem;
+    display: inline-block;
+}
+
+.form-text {
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    margin-top: 0.25rem;
+}
+
+
+/* ==========================================================================
+ *  2) Inputy a selecty — bázové
+ * ========================================================================== */
+
+.form-control,
+.form-select {
+    background-color: var(--clr-input-bg);
+    border: 1px solid var(--border-default);
+    color: var(--text-primary);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.85rem;
+    font-size: var(--text-base);
+    transition:
+        background-color var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.form-control:hover:not(:focus):not(:disabled),
+.form-select:hover:not(:focus):not(:disabled) {
+    border-color: var(--accent-primary);
+}
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--clr-input-focus-bg);
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-focus);
+    color: var(--text-primary);
+    outline: none;
+}
+
+.form-control::placeholder {
+    color: var(--text-muted);
+    opacity: 0.7;
+}
+
+.form-control:disabled,
+.form-select:disabled {
+    background-color: var(--surface-sunken);
+    color: var(--text-disabled);
+    cursor: not-allowed;
+}
+
+
+/* ==========================================================================
+ *  3) Select option — čitelnost v dropdownu
+ *  V `<option>` dědíme barvu pozadí z OS, nedá se moc stylovat.
+ *  Aspoň zajistíme rozumný text/pozadí kontrast.
+ * ========================================================================== */
+
+.form-select option {
+    background-color: var(--surface-overlay);
+    color: var(--text-primary);
+}
+
+
+/* ==========================================================================
+ *  4) Plaintext varianta (read-only zobrazení)
+ * ========================================================================== */
+
+.form-control-plaintext {
+    color: var(--text-primary);
+    background-color: transparent;
+    border-color: transparent;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+
+/* ==========================================================================
+ *  5) Validace (Bootstrap is-invalid / is-valid)
+ * ========================================================================== */
+
+.form-control.is-invalid,
+.form-select.is-invalid {
+    border-color: var(--state-danger-fg);
+    background-image: none; /* Bootstrap má SVG ikonky, ale jsou neestetické */
+}
+
+.form-control.is-invalid:focus,
+.form-select.is-invalid:focus {
+    border-color: var(--state-danger-fg);
+    box-shadow: 0 0 0 0.2rem var(--state-danger-bg);
+}
+
+.invalid-feedback {
+    color: var(--state-danger-fg);
+    font-size: var(--text-xs);
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.form-control.is-valid,
+.form-select.is-valid {
+    border-color: var(--state-success-fg);
+    background-image: none;
+}
+
+.valid-feedback {
+    color: var(--state-success-fg);
+    font-size: var(--text-xs);
+    margin-top: 0.25rem;
+    display: block;
+}
+
+
+/* ==========================================================================
+ *  6) Checkbox a radio
+ * ========================================================================== */
+
+.form-check-input {
+    border: 1px solid var(--border-strong);
+    background-color: var(--clr-input-bg);
+    transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.form-check-input:focus {
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-focus);
+}
+
+.form-check-input:checked {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.form-check-label {
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+}
+
+
+/* ==========================================================================
+ *  7) Switch (form-switch)
+ * ========================================================================== */
+
+.form-switch .form-check-input {
+    background-color: var(--surface-sunken);
+}
+
+.form-switch .form-check-input:checked {
+    background-color: var(--accent-primary);
+}
+
+
+/* ==========================================================================
+ *  8) Form uvnitř glass-modal
+ *  Tokeny se přepíší, takže input automaticky funguje na tmavém pozadí.
+ * ========================================================================== */
+
+.glass-modal .form-control,
+.glass-modal .form-select,
+.glass-modal .form-control-plaintext,
+.glass-modal .form-check-input,
+.glass-modal .form-label,
+.glass-modal .form-text {
+    --text-primary: var(--text-on-dark);
+    --text-secondary: var(--palette-slate-300);
+    --text-muted: var(--palette-slate-400);
+    --border-default: rgba(255, 255, 255, 0.15);
+    --border-strong: rgba(255, 255, 255, 0.25);
+    --clr-input-bg: rgba(255, 255, 255, 0.05);
+    --clr-input-focus-bg: rgba(255, 255, 255, 0.10);
+    --surface-sunken: rgba(255, 255, 255, 0.05);
+    --surface-overlay: var(--palette-slate-800);
+}
+
+/* Speciální .glass-input (původní třída v Blade šablonách) — necháme
+   alias na výše definovaný styl, ať existující šablony fungují. */
+.glass-input {
+    /* shodné s `.glass-modal .form-control` — JS šablony to často kombinují
+       s .form-select, takže i samostatná .glass-input třída se chová stejně */
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: var(--text-on-dark);
+    border-radius: var(--radius-md);
+    padding: 0.5rem 0.85rem;
+    transition:
+        background-color var(--transition-fast),
+        border-color var(--transition-fast),
+        box-shadow var(--transition-fast);
+}
+
+.glass-input:focus {
+    background-color: rgba(255, 255, 255, 0.10);
+    border-color: var(--accent-primary);
+    box-shadow: var(--shadow-focus);
+    color: var(--text-on-dark);
+    outline: none;
+}
+
+.glass-input::placeholder {
+    color: var(--palette-slate-400);
+}
+
+.glass-input option {
+    background-color: var(--palette-slate-800);
+    color: var(--text-on-dark);
+}
+
+
+/* ==========================================================================
+ *  9) Velikosti — sjednocené s Bootstrap
+ * ========================================================================== */
+
+.form-control-sm,
+.form-select-sm {
+    padding: 0.3rem 0.6rem;
+    font-size: var(--text-sm);
+    border-radius: var(--radius-sm);
+}
+
+.form-control-lg,
+.form-select-lg {
+    padding: 0.65rem 1rem;
+    font-size: var(--text-lg);
+    border-radius: var(--radius-lg);
+}
+
+
+/* ==========================================================================
+ *  10) Textarea — výchozí výška a resize
+ * ========================================================================== */
+
+textarea.form-control {
+    min-height: 6rem;
+    resize: vertical;
+}

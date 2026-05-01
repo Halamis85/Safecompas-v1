@@ -63,10 +63,11 @@ class ProduktyController extends Controller
             $dostupneVelikosti = array_filter(array_map('trim', $dostupneVelikosti));
 
             $response = [
-                'id' => $produkt->id,
-                'nazev' => $produkt->nazev,
-                'obrazek' => $produkt->obrazek,
-                'dostupne_velikosti' => array_values($dostupneVelikosti) // Resetuj indexy
+                'id'                  => $produkt->id,
+                'nazev'               => $produkt->nazev,
+                'obrazek'             => $produkt->obrazek,
+                'dostupne_velikosti'  => array_values($dostupneVelikosti),
+                'allow_quantity'      => (bool) $produkt->allow_quantity,
             ];
 
             return response()->json($response);

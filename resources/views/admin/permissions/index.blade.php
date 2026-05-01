@@ -98,4 +98,65 @@
             </div>
         </div>
     </div>
+    <!-- Modal: editace rolí uživatele -->
+<div class="modal fade" id="editUserRolesModal" tabindex="-1"
+     aria-labelledby="editUserRolesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editUserRolesModalLabel">
+                    <i class="fa-solid fa-users-gear me-2"></i>
+                    Editace rolí uživatele
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavřít"></button>
+            </div>
+
+            <div class="modal-body">
+                {{-- Loading stav --}}
+                <div id="edit-user-roles-loading" class="text-center py-4">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Načítání…</span>
+                    </div>
+                </div>
+
+                {{-- Obsah - skrytý dokud se nenačtou data --}}
+                <div id="edit-user-roles-content" class="d-none">
+                    <div class="mb-3">
+                        <strong>Uživatel:</strong>
+                        <span id="edit-user-roles-username" class="text-muted ms-1"></span>
+                    </div>
+
+                    <p class="text-muted small mb-3">
+                        Zaškrtněte role, které má uživatel mít. Změny se uloží po kliknutí
+                        na <strong>Uložit změny</strong>.
+                    </p>
+
+                    <form id="edit-user-roles-form" novalidate>
+                        <input type="hidden" id="edit-user-roles-user-id" value="">
+                        <div id="edit-user-roles-checkboxes"
+                             class="border rounded p-3"
+                             style="max-height: 400px; overflow-y: auto;">
+                            {{-- Dynamicky generované checkboxy rolí --}}
+                        </div>
+                    </form>
+                </div>
+
+                {{-- Chybový stav --}}
+                <div id="edit-user-roles-error" class="alert alert-danger d-none mt-3" role="alert">
+                    {{-- text chyby --}}
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa-solid fa-times me-1"></i> Zrušit
+                </button>
+                <button type="button" class="btn btn-success" id="edit-user-roles-save" disabled>
+                    <i class="fa-solid fa-save me-1"></i> Uložit změny
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection

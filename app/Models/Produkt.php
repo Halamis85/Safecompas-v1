@@ -14,7 +14,8 @@ class Produkt extends Model
         'obrazek',
         'dostupne_velikosti',
         'druh_id',
-        'cena'
+        'cena',
+        'allow_quantity',
     ];
     protected $cena = [
         'cena' => 'decimal:2'
@@ -27,6 +28,11 @@ class Produkt extends Model
     public function objednavky(): HasMany
     {
         return $this->hasMany(Objednavka::class);
+    }
+
+    public function getObrazekAttribute($value): ?string
+    {
+        return $value !== null ? trim($value) : null;
     }
 
     public function getDostupneVelikostiAttribute($value)

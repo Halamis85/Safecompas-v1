@@ -77,7 +77,7 @@ class ZamestnanciController extends Controller
 
         $orders = DB::table('objednavky')
             ->join('produkty', 'objednavky.produkt_id', '=', 'produkty.id')
-            ->select('produkty.nazev as produkt', 'objednavky.velikost', 'objednavky.datum_vydani', 'objednavky.podpis_path')
+            ->select('produkty.nazev as produkt', 'objednavky.velikost', 'objednavky.pocet_kusu', 'objednavky.datum_vydani', 'objednavky.podpis_path')
             ->where('objednavky.zamestnanec_id', $zamestnanecId)
             ->where('objednavky.status', 'vydano')
             ->orderBy('objednavky.datum_vydani', 'desc')

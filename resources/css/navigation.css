@@ -1,0 +1,490 @@
+/* ==========================================================================
+ *  1) NAVBAR
+ * ========================================================================== */
+
+.navbar {
+    z-index: 100;
+    background-color: var(--surface-overlay);
+    border-bottom: none;
+    box-shadow: var(--shadow-md);
+    transition:
+        background-color var(--transition-base),
+        box-shadow var(--transition-base);
+    padding: 1rem 0;
+    width: 100%;
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+}
+
+.navbar-brand {
+    color: var(--text-primary);
+    font-weight: var(--font-bold);
+    font-size: var(--text-2xl);
+    transition: color var(--transition-fast);
+}
+
+.navbar-brand img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    margin-right: 0.5rem;
+}
+
+.navbar-nav .nav-item {
+    margin: 0 0.85rem;
+}
+
+.navbar-nav .nav-link {
+    color: var(--text-primary);
+    font-weight: var(--font-medium);
+    padding: 0.5rem 0;
+    position: relative;
+    transition: color var(--transition-base);
+}
+
+.navbar-nav .nav-link:hover {
+    color: var(--accent-primary);
+}
+
+/* Underline animace */
+.navbar-nav .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    width: 0;
+    height: 2px;
+    background-color: var(--accent-primary);
+    transition: width var(--transition-slow);
+    transform: translateX(-50%);
+}
+
+.navbar-nav .nav-link.active::after,
+.navbar-nav .nav-link:hover::after {
+    width: 100%;
+}
+
+.navbar-nav .nav-link.active {
+    color: var(--accent-primary);
+    font-weight: var(--font-semibold);
+}
+
+
+/* ==========================================================================
+ *  2) Avatar v navbaru (hamburger replacement)
+ * ========================================================================== */
+
+.navbar-avatar-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: var(--surface-sunken);
+    border: 1px solid var(--accent-primary);
+    transform: scale(1);
+    padding: 5px;
+    box-shadow: var(--shadow-md);
+    transition: transform var(--transition-fast);
+}
+
+.navbar-avatar-img:hover {
+    transform: scale(1.08);
+}
+
+
+/* ==========================================================================
+ *  3) Role label pod jménem
+ * ========================================================================== */
+
+.role {
+    color: var(--text-muted);
+    font-weight: var(--font-normal);
+    font-size: var(--text-base);
+    padding-top: 0;
+    margin-top: 0;
+}
+
+
+/* ==========================================================================
+ *  4) PROFILE SIDEBAR
+ *  Vysouvací menu zprava. Pozadí glass overlay, border-default.
+ * ========================================================================== */
+
+.profile-sidebar {
+    position: fixed;
+    top: 0;
+    right: -300px;
+    width: 240px;
+    height: 100%;
+    background-color: var(--surface-overlay);
+    backdrop-filter: var(--glass-strong-blur);
+    -webkit-backdrop-filter: var(--glass-strong-blur);
+    border-left: 1px solid var(--border-default);
+    box-shadow: -8px 0 24px rgba(0, 0, 0, 0.15);
+    z-index: 101;
+    transition: right var(--transition-slow);
+    display: flex;
+    flex-direction: column;
+    padding: 1.25rem;
+}
+
+.profile-sidebar.show {
+    right: 0;
+}
+
+.profile-sidebar .sidebar-header {
+    text-align: center;
+    padding-bottom: 1.25rem;
+    border-bottom: 1px solid var(--border-default);
+    position: relative;
+}
+
+.profile-sidebar .sidebar-header .btn-close {
+    position: absolute;
+    top: 0;
+    right: 0;
+}
+
+.profile-sidebar .sidebar-avatar-img {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid var(--accent-primary);
+}
+
+.profile-sidebar .sidebar-body {
+    flex-grow: 1;
+    padding-top: 0.75rem;
+    border-bottom: 1px solid var(--border-default);
+}
+
+.profile-sidebar .sidebar-item {
+    display: block;
+    margin-top: 1.5rem;
+    padding: 0.85rem 0;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast);
+    border-radius: var(--radius-lg);
+    border: none;
+    background: transparent;
+}
+
+.profile-sidebar .sidebar-item:hover {
+    background-color: var(--accent-primary-soft);
+    color: var(--accent-primary);
+}
+
+.profile-sidebar .sidebar-item i {
+    width: 25px;
+}
+
+/* Logout — destruktivní akce, červený hover je sémantický */
+.profile-sidebar .logout-item:hover {
+    color: var(--state-danger-fg);
+    background-color: var(--state-danger-bg);
+}
+
+
+/* ==========================================================================
+ *  5) Sidebar overlay (pozadí pod sidebar)
+ * ========================================================================== */
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 100;
+    display: none;
+}
+
+.sidebar-overlay.show {
+    display: block;
+}
+
+
+/* ==========================================================================
+ *  6) Profile toggle button (animace skrytí při otevřeném sidebaru)
+ * ========================================================================== */
+
+#profileSidebarToggle {
+    transition:
+        opacity var(--transition-base),
+        visibility var(--transition-slow);
+}
+
+#profileSidebarToggle.hidden-toggle {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+
+/* ==========================================================================
+ *  7) NOTIFIKAČNÍ ZVONEK
+ *  Komponenta notifica-bell.blade.php — dropdown s bell ikonou.
+ * ========================================================================== */
+
+.notification-dropdown .btn-outline-secondary {
+    border-color: var(--border-default);
+    color: var(--text-secondary);
+    background-color: transparent;
+}
+
+.notification-dropdown .btn-outline-secondary:hover {
+    background-color: var(--accent-primary-soft);
+    border-color: var(--accent-primary);
+    color: var(--accent-primary);
+}
+
+/* Badge na zvonku — Bootstrap bg-danger zachováváme (notifikace = pozornost) */
+#notification-badge {
+    font-size: var(--text-xs);
+    font-weight: var(--font-bold);
+    min-width: 1.25rem;
+    padding: 0.2rem 0.4rem;
+}
+
+/* Dropdown menu */
+.notification-menu {
+    min-width: 360px;
+    max-width: 420px;
+    max-height: 500px;
+    overflow-y: auto;
+    background-color: var(--surface-overlay);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-xl);
+    border-radius: var(--radius-lg);
+    padding: 0;
+    backdrop-filter: var(--glass-strong-blur);
+    -webkit-backdrop-filter: var(--glass-strong-blur);
+}
+
+.notification-menu .dropdown-header {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border-default);
+    background-color: var(--surface-sunken);
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+
+/* Tlačítko "Označit vše" */
+.all-select-btn {
+    background: transparent;
+    border: 1px solid var(--border-default);
+    color: var(--text-secondary);
+    padding: 0.3rem 0.7rem;
+    border-radius: var(--radius-sm);
+    font-size: var(--text-xs);
+    cursor: pointer;
+    transition:
+        background-color var(--transition-fast),
+        color var(--transition-fast),
+        border-color var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.all-select-btn:hover {
+    background-color: var(--accent-primary-soft);
+    color: var(--accent-primary);
+    border-color: var(--accent-primary);
+}
+
+.all-select-btn .icon {
+    width: 14px;
+    height: 14px;
+    stroke: currentColor;
+}
+
+/* Notification list */
+.notification-list {
+    max-height: 380px;
+    overflow-y: auto;
+}
+
+.notification-item {
+    padding: 0.85rem 1.25rem;
+    border-bottom: 1px solid var(--border-default);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+.notification-item:hover {
+    background-color: var(--accent-primary-soft);
+}
+
+.notification-item.unread {
+    background-color: var(--accent-primary-soft);
+    border-left: 3px solid var(--accent-primary);
+}
+
+.notification-item.read {
+    opacity: 0.75;
+}
+
+.notification-content {
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+}
+
+.notification-time {
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+.notification-fa-icon {
+    background-color: var(--accent-primary-soft);
+    color: var(--accent-primary);
+}
+
+/* Dropdown footer link */
+.notification-menu .dropdown-item {
+    color: var(--text-primary);
+    padding: 0.85rem 1.25rem;
+    text-align: center;
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.notification-menu .dropdown-item:hover {
+    background-color: var(--accent-primary-soft);
+    color: var(--accent-primary);
+}
+
+
+/* ==========================================================================
+ *  8) ALERT KOMPONENTY
+ *  Bootstrap alerty se používají jak inline (v stránce), tak v
+ *  notifikačním kontejneru (showNotification). Sjednoceno na state tokeny.
+ * ========================================================================== */
+
+.alert {
+    padding: 1rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-lg);
+    transition: opacity var(--transition-base);
+}
+
+.alert-success {
+    background-color: var(--state-success-bg);
+    color: var(--state-success-fg);
+    border-color: var(--state-success-border);
+}
+
+.alert-danger {
+    background-color: var(--state-danger-bg);
+    color: var(--state-danger-fg);
+    border-color: var(--state-danger-border);
+}
+
+.alert-warning {
+    background-color: var(--state-warning-bg);
+    color: var(--state-warning-fg);
+    border-color: var(--state-warning-border);
+}
+
+.alert-info {
+    background-color: var(--state-info-bg);
+    color: var(--state-info-fg);
+    border-color: var(--state-info-border);
+}
+
+/* Shadow varianty (používané v JS šablonách jako shadow-success/shadow-error) */
+.shadow-success {
+    box-shadow: 0 0.5rem 1rem rgba(34, 197, 94, 0.25);
+    transition: box-shadow var(--transition-base);
+}
+
+.shadow-error {
+    box-shadow: 0 0.5rem 1rem rgba(239, 68, 68, 0.25);
+    transition: box-shadow var(--transition-base);
+}
+
+
+/* ==========================================================================
+ *  9) BADGE — drobné ladění
+ *  Bootstrap bg-success / bg-warning / bg-danger zachováváme, jen jim
+ *  dodáme konzistentní padding a font.
+ * ========================================================================== */
+
+.badge {
+    padding: 0.4em 0.7em;
+    font-weight: var(--font-medium);
+    letter-spacing: 0.02em;
+    border-radius: var(--radius-sm);
+}
+
+
+/* ==========================================================================
+ *  10) Tooltip (vlastní implementace .tooltip-container)
+ *  Zachovává původní hover-show logiku. Sjednoceno na tokens.
+ * ========================================================================== */
+
+.tooltip-text {
+    background-color: var(--palette-slate-800);
+    color: var(--palette-slate-100);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    font-size: var(--text-sm);
+    padding: 0.5rem 0.75rem;
+}
+/* ==========================================================================
+ *  11) PLOVOUCÍ NOTIFIKACE (JS POPUPS)
+ *  Styl pro showNotification() funkci.
+ * ========================================================================== */
+
+.notification {
+    padding: 1rem 1.5rem;
+    margin-bottom: 0.5rem;
+    border-radius: var(--radius-md);
+    background-color: var(--surface-overlay);
+    backdrop-filter: var(--glass-strong-blur);
+    -webkit-backdrop-filter: var(--glass-strong-blur);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-lg);
+    color: var(--text-primary);
+    opacity: 0;
+    transform: translateY(-20px);
+    transition: 
+        opacity var(--transition-base),
+        transform var(--transition-base);
+    min-width: 300px;
+    max-width: 500px;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    pointer-events: auto;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification.success {
+    border-left: 4px solid var(--state-success-strong);
+}
+
+.notification.error {
+    border-left: 4px solid var(--state-danger-strong);
+}
+
+.notification.info {
+    border-left: 4px solid var(--accent-primary);
+}

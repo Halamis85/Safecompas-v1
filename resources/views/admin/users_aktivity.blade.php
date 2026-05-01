@@ -18,6 +18,13 @@
     </div>
 
     <div class="m-bg-tran p-5 mb-5">
+                <div class="d-flex justify-content-end mb-2">
+                <a href="{{ route('export.aktivity') }}"
+                    class="btn btn-outline-success btn-sm"
+                    title="Stáhnout tabulku jako XLSX">
+                    <i class="fa-solid fa-file-excel me-1"></i> Export do Excelu
+                </a>
+            </div>
         <div class="bg-light p-2">
             <table id="activitiesTable" class="table table-striped table-bordered">
                 <thead>

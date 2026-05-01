@@ -1,7 +1,4 @@
 
-
-// noinspection JSNonASCIINames
-
  function menuoopp() {
 
     const ordersContainer = document.getElementById('orders-container');
@@ -104,24 +101,24 @@
             return ''; // Vrátí prázdný řetězec, pokud není kód ikony
         }
         const iconMap = {
-            '01d': '/images/Weather/01d.gif', // Jasno, den
-            '01n': '/images/Weather/01n.gif', // Jasno, noc
-            '02d': '/images/Weather/02d.gif', // Polojasno, den
-            '02n': '/images/Weather/02n.gif', // Polojasno, noc
-            '03d': '/images/Weather/03d.gif', // Oblačno, den
-            '03n': '/images/Weather/03n.gif', // Oblačno, noc
-            '04d': '/images/Weather/04d.gif', // Zataženo, den
-            '04n': '/images/Weather/04n.gif', // Zataženo, noc
-            '09d': '/images/Weather/09d.gif', // Slabý déšť, den
-            '09n': '/images/Weather/09n.gif', // Slabý déšť, noc
-            '10d': '/images/Weather/10d.gif', // Déšť, den
-            '10n': '/images/Weather/10n.gif', // Déšť, noc
-            '11d': '/images/Weather/11d.gif', // Bouřka, den
-            '11n': '/images/Weather/11n.gif', // Bouřka, noc
-            '13d': '/images/Weather/13d.gif', // Sníh, den
-            '13n': '/images/Weather/13n.gif', // Sníh, noc
-            '50d': '/images/Weather/50d.gif', // Mlha, den
-            '50n': '/images/Weather/50n.gif', // Mlha, noc
+            '01d': '/images/Weather/01d.png', // Jasno, den
+            '01n': '/images/Weather/01n.png', // Jasno, noc
+            '02d': '/images/Weather/02d.png', // Polojasno, den
+            '02n': '/images/Weather/02n.png', // Polojasno, noc
+            '03d': '/images/Weather/03d.png', // Oblačno, den
+            '03n': '/images/Weather/03n.png', // Oblačno, noc
+            '04d': '/images/Weather/04d.png', // Zataženo, den
+            '04n': '/images/Weather/04n.png', // Zataženo, noc
+            '09d': '/images/Weather/09d.png', // Slabý déšť, den
+            '09n': '/images/Weather/09n.png', // Slabý déšť, noc
+            '10d': '/images/Weather/10d.png', // Déšť, den
+            '10n': '/images/Weather/10n.png', // Déšť, noc
+            '11d': '/images/Weather/11d.png', // Bouřka, den
+            '11n': '/images/Weather/11n.png', // Bouřka, noc
+            '13d': '/images/Weather/13d.png', // Sníh, den
+            '13n': '/images/Weather/13n.png', // Sníh, noc
+            '50d': '/images/Weather/50d.png', // Mlha, den
+            '50n': '/images/Weather/50n.png', // Mlha, noc
             // Přidejte další kódy ikon, pokud je vaše sada obsahuje
         };
 
@@ -201,8 +198,8 @@
     fetch('/objednavkyMenu') // nové API
         .then(response => response.json())
         .then(data => {
-            const allowedStatuses = ['cekajici','objednáno'];
-            const counts = { cekajici: 0, objednáno: 0 };
+            const allowedStatuses = ['cekajici', 'objednano'];
+            const counts = { cekajici: 0, objednano: 0 };
 
             const filteredOrders = data.filter(order => {
                 const status = order.status.toLowerCase().trim();
@@ -223,7 +220,7 @@
             objedCountElem.classList.remove('d-none');
 
             cekaCountElem.textContent = counts.cekajici;
-            objedCountElem.textContent = counts['objednáno'];
+            objedCountElem.textContent = counts.objednano;
 
             filteredOrders.forEach(order => {
                 const orderElement = document.createElement('div');
@@ -231,7 +228,7 @@
                 orderElement.style.width = '250px';
 
                 const img = order.obrazek
-                    ? `<img src="/images/OOPP/${order.obrazek}" class="rounded-circle produck-circle"
+                    ? `<img src="/images/OOPP/${order.obrazek.trim()}" class="rounded-circle produck-circle"
                         alt="Obrázek produktu" style="width: 150px; height: 150px; object-fit: contain;">`
                     : 'Obrázek u produktu není';
 
@@ -240,7 +237,7 @@
                     case 'cekajici':
                         statusText = 'Čekající';
                         break;
-                    case 'objednáno':
+                    case 'objednano':
                         statusText = 'Objednáno';
                         break;
                     default:
@@ -283,8 +280,6 @@
              
              document.getElementById('rok-zobrazeni').textContent = data.rok;
 
-             // Pokud máte graf, můžete ho aktualizovat zde
-             // aktualizujGraf(data);
 
          } catch (error) {
              console.error('Chyba při načítání statistik:', error);

@@ -1,12 +1,5 @@
 // resources/js/userActivity.js
 import DataTable from 'datatables.net-dt';
-import JSZip from 'jszip';
-import pdfMake from 'pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
-
-window.JSZip = JSZip;
-window.pdfMake = pdfMake;
-pdfMake.addVirtualFileSystem(pdfFonts);
 
 let activitiesDataTable;
 
@@ -101,29 +94,9 @@ export function userActivity() {
                 }
             ],
             dom:
-                "<'row align-items-center mb-2 me-2'<'col-auto'B><'col text-end'f>>" +
+                "<'row align-items-center mb-2 me-2'<'col text-end'f>>" +
                 "<'table-responsive't>" +
                 "<'row align-items-center mt-2 mb-2'<'col text-center'p>>",
-            buttons: [
-                {
-                    extend: 'excelHtml5',
-                    text: '<img src="/images/excel1.svg" alt="Excel" width="30">',
-                    titleAttr: 'Exportovat tabulku do Excelu',
-                    className: 'btn p-0 m-2'
-                },
-                {
-                    extend: 'pdfHtml5',
-                    text: '<img src="/images/PDF.svg" alt="PDF" width="30">',
-                    titleAttr: 'Exportovat tabulku do PDF',
-                    className: 'btn p-0 m-2'
-                },
-                {
-                    extend: 'print',
-                    text: '<img src="/images/printer.svg" alt="Tisknout" width="30">',
-                    titleAttr: 'Vytisknout tabulku',
-                    className: 'btn p-0 m-2'
-                }
-            ],
             info: false,
             paging: true,
             responsive: true,

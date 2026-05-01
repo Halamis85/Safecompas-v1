@@ -1,13 +1,5 @@
 // resources/js/employees.js
 import DataTable from 'datatables.net-dt';
-import JSZip from 'jszip';
-import pdfMake from 'pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
-
-
-window.JSZip = JSZip;
-window.pdfMake = pdfMake;
-pdfMake.addVirtualFileSystem(pdfFonts);
 
 // Proměnná pro instanci DataTables, abychom ji mohli zničit/znovu inicializovat
 let employeesDataTable;
@@ -154,26 +146,9 @@ function employeeList() {
                             }
                         ],
                         dom:
-                            "<'row align-items-center mb-2 me-2'<'col-auto'B><'col text-end'f>>" + // Horní řádek
+                            "<'row align-items-center mb-2 me-2'<'col text-end'f>>" +
                             "<'table-responsive't>" +
-                            "<'row align-items-center mt-2 mb-2'<'col text-center'p>>", // Ponecháme vestavěné vyhledávání
-                        buttons: [
-                            {
-                                extend: 'excelHtml5', text: '<img src="/images/excel1.svg" ' +
-                                    'alt="Excel" width="30">', titleAttr: 'Exportovat tabulku do Exlu'
-                                , className: 'btn p-0 m-2'
-                            },
-                            {
-                                extend: 'pdfHtml5', text: '<img src="/images/PDF.svg" ' +
-                                    'alt="PDF" width="30">', titleAttr: 'Exportovat tabulku do PDF'
-                                , className: 'btn p-0 m-2'
-                            },
-                            {
-                                extend: 'print', text: '<img src="/images/printer.svg" ' +
-                                    'alt="PDF" width="30">', titleAttr: 'Vytisknout tabulku '
-                                , className: 'btn p-0 m-2'
-                            }
-                        ], // Předáváme DataTables načtená data
+                            "<'row align-items-center mt-2 mb-2'<'col text-center'p>>",
                         info: false,
                         language: {
                             url: "/assets/cs.json"
@@ -186,11 +161,16 @@ function employeeList() {
 
                     // Po inicializaci DataTables musíme delegovat event listener
                     // protože se tlačítka znovu generují
-                    $(emploeesTable).off('click', '.delete-employee').on('click', '.delete-employee', function () {
-                        const userID = $(this).data('id'); // Získání data-id
+                    if (window._employeeListAbortCtrl) {
+                        window._employeeListAbortCtrl.abort();
+                    }
+                    window._employeeListAbortCtrl = new AbortController();
+                    emploeesTable.addEventListener('click', (event) => {
+                        const btn = event.target.closest('.delete-employee');
+                        if (!btn) return;
+                        const userID = btn.dataset.id;
                         handleDeleteUser(userID);
-                    });
-
+                    }, { signal: window._employeeListAbortCtrl.signal });
                     console.log("DataTables pro zaměstnance inicializováno.");
 
                 } else {

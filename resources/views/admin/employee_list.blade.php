@@ -25,8 +25,15 @@
 
 
     <div class="m-bg-tran p-5 mb-5">
-                <div class="bg-light p-2">
-                    <table id="employees-table" class="table table-striped table-hover table-responsive">
+        <div class="d-flex justify-content-end mb-2">
+            <a href="{{ route('export.zamestnanci') }}"
+                class="btn btn-outline-success btn-sm"
+                title="Stáhnout tabulku jako XLSX">
+                <i class="fa-solid fa-file-excel me-1"></i> Export do Excelu
+            </a>
+        </div>
+        <div class="bg-light p-2">
+            <table id="employees-table" class="table table-striped table-hover table-responsive">
                         <thead>
                         <tr>
                             <th class="text-center">Jméno</th>

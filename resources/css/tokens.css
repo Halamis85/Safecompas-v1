@@ -1,0 +1,455 @@
+/* ==========================================================================
+ *  Safecompas — Design Token System (Restart 1)
+ *  Verze 2.0
+ *
+ *  Tento soubor definuje JEN proměnné. Žádné komponenty, žádné selektory
+ *  s vlastnostmi. Slouží jako autoritativní zdroj barev/typografie/spacing
+ *  pro celou aplikaci.
+ *
+ *  Barvy:        Tailwind indigo (akcent), Tailwind slate (neutrály)
+ *  Typografie:   System fonts (žádný webfont)
+ *  Glass:        Dvě úrovně (strong / subtle) + jeden modal preset
+ *
+ *  Tato fáze (Restart 1) nemění nic vizuálně. Tokeny jsou připravené,
+ *  ale komponenty pořád používají staré proměnné. V dalších fázích
+ *  začneme komponenty po komponentách na nové tokeny převádět.
+ *
+ *  KOMPATIBILITA: Všechny staré tokeny (--my-bg-color-default,
+ *  --clr-bg-default, --clr-text-default, --clr-glass-bg-light atd.) jsou
+ *  zde zachovány a NAMAPOVANÉ na nové tokeny přes `var()` aliasy.
+ *  Stávající kód funguje dál bez úprav.
+ * ========================================================================== */
+
+
+/* ==========================================================================
+ *  LIGHT MODE (default)
+ * ========================================================================== */
+
+:root {
+
+    /* ──────────────────────────────────────────────────────────────────
+       1) PALETA — surové barevné hodnoty (raw tokens)
+       Tahle vrstva je interní; v komponentách ji nepoužívej přímo.
+       Místo `var(--palette-indigo-500)` používej sémantické tokeny
+       jako `var(--accent-primary)`.
+       ────────────────────────────────────────────────────────────────── */
+
+    /* Indigo — akcent */
+    --palette-indigo-50:  #eef2ff;
+    --palette-indigo-100: #e0e7ff;
+    --palette-indigo-200: #c7d2fe;
+    --palette-indigo-300: #a5b4fc;
+    --palette-indigo-400: #818cf8;
+    --palette-indigo-500: #6366f1; /* primary akcent */
+    --palette-indigo-600: #4f46e5;
+    --palette-indigo-700: #4338ca;
+    --palette-indigo-800: #3730a3;
+    --palette-indigo-900: #312e81;
+
+    /* Slate — neutrály */
+    --palette-slate-50:  #f8fafc;
+    --palette-slate-100: #f1f5f9;
+    --palette-slate-200: #e2e8f0;
+    --palette-slate-300: #cbd5e1;
+    --palette-slate-400: #94a3b8;
+    --palette-slate-500: #64748b;
+    --palette-slate-600: #475569;
+    --palette-slate-700: #334155;
+    --palette-slate-800: #1e293b;
+    --palette-slate-900: #0f172a;
+
+    /* Stavové barvy */
+    --palette-success-500: #22c55e;
+    --palette-success-600: #16a34a;
+    --palette-warning-500: #f59e0b;
+    --palette-warning-600: #d97706;
+    --palette-danger-500:  #ef4444;
+    --palette-danger-600:  #dc2626;
+    --palette-info-500:    #06b6d4;
+
+
+    /* ──────────────────────────────────────────────────────────────────
+       2) BRAND — akcentová barva
+       ────────────────────────────────────────────────────────────────── */
+
+    --accent-primary:        var(--palette-indigo-500);
+    --accent-primary-hover:  var(--palette-indigo-600);
+    --accent-primary-active: var(--palette-indigo-700);
+    --accent-primary-soft:   rgba(99, 102, 241, 0.15);
+    --accent-primary-glow:   rgba(99, 102, 241, 0.30);
+    --accent-on-primary:     #ffffff; /* text na akcentovém pozadí */
+
+
+    /* ──────────────────────────────────────────────────────────────────
+       3) SURFACE — vrstvy hloubky
+       Logika: čím "výš" je prvek, tím světlejší (light mode) /
+       světlejší (dark mode) má pozadí.
+       ────────────────────────────────────────────────────────────────── */
+
+    --surface-page:    #7272be;                    /* tělo stránky (zachováváme dosavadní fialovo-modrou) */
+    --surface-raised:  rgba(255, 255, 255, 0.55);   /* karty, panely */
+    --surface-overlay: rgba(255, 255, 255, 0.58);   /* modaly, dropdowns */
+    --surface-sunken:  rgba(255, 255, 255, 0.30);   /* input pozadí, table stripe */
+    --surface-inverse: var(--palette-slate-900);    /* pevně tmavý prvek (např. kontrastní badge) */
+
+
+    /* ──────────────────────────────────────────────────────────────────
+       4) TEXT — sémantické úrovně
+       ────────────────────────────────────────────────────────────────── */
+
+    --text-primary:    var(--palette-slate-800);
+    --text-secondary:  var(--palette-slate-700);
+    --text-muted:      var(--palette-slate-500);
+    --text-disabled:   var(--palette-slate-400);
+    --text-link:       var(--accent-primary);
+    --text-on-accent:  var(--accent-on-primary);
+    --text-on-dark:    var(--palette-slate-100);    /* uvnitř dark glass modalů */
+
+
+    /* ──────────────────────────────────────────────────────────────────
+       5) BORDER
+       ────────────────────────────────────────────────────────────────── */
+
+    --border-subtle:  rgba(255, 255, 255, 0.20);
+    --border-default: rgba(255, 255, 255, 0.30);
+    --border-strong:  rgba(0, 0, 0, 0.10);
+    --border-focus:   var(--accent-primary);
+
+
+    /* ──────────────────────────────────────────────────────────────────
+       6) STATE — sémantické barvy
+       Každá má fg / bg / border — pro flexibilní použití
+       (alert, badge, table row, button).
+       ────────────────────────────────────────────────────────────────── */
+
+    --state-success-fg:     var(--palette-success-600);
+    --state-success-bg:     rgba(34, 197, 94, 0.10);
+    --state-success-border: rgba(34, 197, 94, 0.30);
+    --state-success-strong: var(--palette-success-500); /* solid bg */
+
+    --state-warning-fg:     var(--palette-warning-600);
+    --state-warning-bg:     rgba(245, 158, 11, 0.10);
+    --state-warning-border: rgba(245, 158, 11, 0.30);
+    --state-warning-strong: var(--palette-warning-500);
+
+    --state-danger-fg:      var(--palette-danger-600);
+    --state-danger-bg:      rgba(239, 68, 68, 0.10);
+    --state-danger-border:  rgba(239, 68, 68, 0.30);
+    --state-danger-strong:  var(--palette-danger-500);
+
+    --state-info-fg:        var(--palette-info-500);
+    --state-info-bg:        rgba(6, 182, 212, 0.10);
+    --state-info-border:    rgba(6, 182, 212, 0.30);
+
+
+    /* ──────────────────────────────────────────────────────────────────
+       7) GLASS —
+       ────────────────────────────────────────────────────────────────── */
+
+    /* Strong — karty, modal content, hlavní panel */
+    --glass-strong-bg:     rgba(255, 255, 255, 0.55);
+    --glass-strong-blur:   blur(16px);
+    --glass-strong-border: rgba(255, 255, 255, 0.40);
+    --glass-strong-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.10);
+
+    /* Subtle — pozadí kontejnerů, list groupy, mírné podsvícení */
+    --glass-subtle-bg:     rgba(255, 255, 255, 0.25);
+    --glass-subtle-blur:   blur(6px);
+    --glass-subtle-border: rgba(255, 255, 255, 0.20);
+    --glass-subtle-shadow: 0 4px 12px 0 rgba(31, 38, 135, 0.06);
+
+    /* Modal — vždy tmavý glass i v light módu (vyšší kontrast pro focus) */
+    --glass-modal-bg:      rgba(15, 23, 42, 0.85);
+    --glass-modal-blur:    blur(20px);
+    --glass-modal-border:  rgba(255, 255, 255, 0.10);
+    --glass-modal-shadow:  0 25px 50px -12px rgba(0, 0, 0, 0.40);
+
+
+    /* ──────────────────────────────────────────────────────────────────
+       8) SHADOW — pevné stupně, ne "udělej víc když napíšeš víc rgba"
+       ────────────────────────────────────────────────────────────────── */
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.10), 0 2px 4px -2px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.10), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.10), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+
+    --shadow-focus: 0 0 0 0.2rem var(--accent-primary-soft);
+
+
+    /* ──────────────────────────────────────────────────────────────────
+       9) RADIUS scale
+       ────────────────────────────────────────────────────────────────── */
+
+    --radius-sm:   0.25rem;  /*  4px — drobné prvky (badges) */
+    --radius-md:   0.5rem;   /*  8px — buttons, inputs */
+    --radius-lg:   0.75rem;  /* 12px — karty */
+    --radius-xl:   1rem;     /* 16px — modaly */
+    --radius-2xl:  1.5rem;   /* 24px — velké panely */
+    --radius-full: 9999px;   /* pill, kruhy */
+
+
+    /* ──────────────────────────────────────────────────────────────────
+       10) SPACING — Bootstrap má svůj 0/1/2/3/4/5 systém, doplňujeme
+       jen sémantické tokeny pro layout
+       ────────────────────────────────────────────────────────────────── */
+
+    --space-section: 3rem;    /* mezi major sekcemi stránky */
+    --space-card:    1.5rem;  /* vnitřní padding karet */
+    --space-input:   0.5rem;  /* vnitřní padding inputů */
+
+
+    /* ──────────────────────────────────────────────────────────────────
+       11) TYPOGRAFIE — system fonts
+       Žádný webfont, žádný download, žádný FOUC. Aplikace se loaduje
+       o ~30 KB rychleji.
+       ────────────────────────────────────────────────────────────────── */
+
+    --font-sans:
+        ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", Roboto, "Helvetica Neue", Arial,
+        "Noto Sans", sans-serif,
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+
+    --font-mono:
+        ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+        "Liberation Mono", monospace;
+
+    /* Velikosti — minor third scale (1.2×) */
+    --text-xs:   0.75rem;
+    --text-sm:   0.875rem;
+    --text-base: 1rem;
+    --text-lg:   1.125rem;
+    --text-xl:   1.25rem;
+    --text-2xl:  1.5rem;
+    --text-3xl:  1.875rem;
+    --text-4xl:  2.25rem;
+
+    /* Váhy */
+    --font-normal:    400;
+    --font-medium:    500;
+    --font-semibold:  600;
+    --font-bold:      700;
+
+    /* Line heights */
+    --leading-tight:   1.25;
+    --leading-normal:  1.5;
+    --leading-relaxed: 1.65;
+
+
+    /* ──────────────────────────────────────────────────────────────────
+       12) TRANSITIONS — sjednocené timing
+       ────────────────────────────────────────────────────────────────── */
+
+    --transition-fast:   150ms ease;
+    --transition-base:   250ms ease;
+    --transition-slow:   400ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bouncy: 400ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+
+    --clr-bg-body:           var(--surface-page);
+    --clr-bg-main:           var(--surface-raised);
+    --clr-bg-mainheader:     #e9eaea;
+    --clr-bg-card:           var(--surface-raised);
+    --clr-bg-header:         var(--surface-raised);
+    --clr-bg-sidebar:        var(--surface-overlay);
+    --clr-bg-footer:         rgba(233, 236, 239, 0.8);
+    --clr-bg-circle:         var(--surface-raised);
+    --clr-bg-accent:         var(--palette-slate-100);
+    --clr-bg-table-baground: rgba(216, 224, 232, 0.74);
+
+    --clr-glass-bg-light:    var(--glass-strong-bg);
+    --clr-glass-border-light: var(--glass-strong-border);
+    --clr-glass-shadow-light: var(--glass-strong-shadow);
+    --clr-glass-bg-list:      var(--glass-subtle-bg);
+    --clr-glass-blur-amount:  16px;
+    --clr-glass-border:       var(--glass-strong-border);
+    --clr-glass-card-header:  rgba(255, 255, 255, 0.20);
+    --clr-glass-gradient-start: rgba(222, 222, 225, 0.7);
+    --clr-glass-gradient-end:   rgba(205, 210, 225, 0.7);
+
+    --clr-text-default:  var(--text-primary);
+    --clr-text-heading:  var(--text-primary);
+    --clr-text-muted:    var(--text-muted);
+    --clr-text-link:     var(--text-link);
+    --clr-text-success:  var(--state-success-fg);
+
+    --clr-border-default: var(--border-default);
+    --clr-border:         var(--border-default);
+    --clr-accent-color:   var(--accent-primary);
+    --clr-hr:             rgba(0, 0, 0, 0.10);
+    --clr-bg-hover:       rgba(99, 102, 241, 0.08);
+    --clr-danger:         var(--state-danger-fg);
+
+    /* Tady byla #f60606 — POZOR: tohle už nikde aktivně nepoužíváme,
+       ale pro jistotu mapujeme na akcent (žádné ad-hoc červené barvy
+       jako branding) */
+    --my-bg-color-default: var(--accent-primary);
+    --my-bg-color-dark:    var(--accent-primary);
+
+    --clr-input-bg:        rgba(255, 255, 255, 0.40);
+    --clr-input-focus-bg:  rgba(255, 255, 255, 0.60);
+    --clr-shadow-light:    var(--shadow-md);
+    --clr-shadow-card:     var(--glass-strong-shadow);
+
+    --clr-icon-default:  var(--palette-slate-500);
+    --clr-icon-hover:    var(--palette-slate-900);
+
+    --clr-circle-gradient-start: #2f3649;
+    --clr-circle-gradient-end:   #24293b;
+
+    --clr-skeleton-bg:      rgba(0, 0, 0, 0.05);
+    --clr-skeleton-shimmer:
+        linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0,
+            rgba(255, 255, 255, 0.2) 20%,
+            rgba(255, 255, 255, 0.4) 60%,
+            rgba(255, 255, 255, 0)
+        );
+
+    /* Bootstrap přemostění */
+    --bs-body-bg:        var(--clr-bg-body);
+    --bs-body-color:     var(--text-primary);
+    --bs-card-bg:        var(--surface-raised);
+    --bs-border-color:   var(--border-default);
+    --bs-heading-color:  var(--text-primary);
+    --bs-primary:        var(--accent-primary);
+    --bs-primary-rgb:    99, 102, 241;
+    --bs-link-color:     var(--accent-primary);
+    --bs-link-hover-color: var(--accent-primary-hover);
+
+    --bs-circle-gradient-start: var(--surface-raised);
+}
+
+
+/* ==========================================================================
+ *  DARK MODE
+ *  Rozdělení do bloku s `body.dark-mode` zachováno, aby existující kód
+ *  s `data-bs-theme="dark"` i bez něj fungoval. Tokeny mají stejné názvy,
+ *  jen jiné hodnoty.
+ * ========================================================================== */
+
+body.dark-mode {
+
+    /* Surface — slate-900 jako pozadí stránky, postupně světlejší vrstvy */
+    --surface-page:    var(--palette-slate-900);              /* #0f172a */
+    --surface-raised:  rgba(30, 41, 59, 0.65);                /* slate-800 s alpha */
+    --surface-overlay: rgba(30, 41, 59, 0.85);                /* slate-800 plnější */
+    --surface-sunken:  rgba(15, 23, 42, 0.50);                /* tmavší než stránka */
+    --surface-inverse: var(--palette-slate-100);
+
+    /* Brand — světlejší indigo na tmavém pozadí (lepší kontrast) */
+    --accent-primary:        var(--palette-indigo-400);       /* #818cf8 */
+    --accent-primary-hover:  var(--palette-indigo-300);
+    --accent-primary-active: var(--palette-indigo-200);
+    --accent-primary-soft:   rgba(129, 140, 248, 0.20);
+    --accent-primary-glow:   rgba(129, 140, 248, 0.40);
+
+    /* Text — claritní hierarchie bílo-šedých */
+    --text-primary:   var(--palette-slate-100);
+    --text-secondary: var(--palette-slate-200);
+    --text-muted:     var(--palette-slate-400);
+    --text-disabled:  var(--palette-slate-600);
+    --text-link:      var(--accent-primary);
+    --text-on-accent: var(--palette-slate-900);
+    /* --text-on-dark zůstává stejné */
+
+    /* Border */
+    --border-subtle:  rgba(255, 255, 255, 0.05);
+    --border-default: rgba(255, 255, 255, 0.10);
+    --border-strong:  rgba(255, 255, 255, 0.20);
+
+    /* State barvy se nemění — kontrast je dostatečný v obou módech */
+
+    /* Glass — tmavší varianty */
+    --glass-strong-bg:     rgba(30, 41, 59, 0.65);
+    --glass-strong-border: rgba(255, 255, 255, 0.10);
+    --glass-strong-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.40);
+
+    --glass-subtle-bg:     rgba(15, 23, 42, 0.50);
+    --glass-subtle-border: rgba(255, 255, 255, 0.05);
+    --glass-subtle-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.30);
+
+    /* Modal preset zůstává stejný (tmavý i v light) */
+
+    /* Shadows — silnější v dark módu */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.30);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.40), 0 2px 4px -2px rgba(0, 0, 0, 0.30);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.50), 0 4px 6px -4px rgba(0, 0, 0, 0.30);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.60), 0 8px 10px -6px rgba(0, 0, 0, 0.30);
+
+    /* ────────────────────────────────────────────────────────────
+       Pozadí stránky — keep webp obrázek, ale s opravenou cestou.
+       (Původní cesta /public/images/... v produkci 404uje, protože
+       Laravel public je document root.)
+       ──────────────────────────────────────────────────────────── */
+    background-image: url("/images/black.back.webp");
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-size: cover;
+
+
+    /* ==================================================================
+       LEGACY ALIASY — dark mode override hodnoty
+       ================================================================== */
+
+    --clr-bg-body:        var(--surface-page);
+    --clr-bg-main:        var(--surface-raised);
+    --clr-bg-mainheader:  var(--surface-raised);
+    --clr-bg-card:        var(--surface-raised);
+    --clr-bg-header:      var(--surface-raised);
+    --clr-bg-sidebar:     var(--surface-overlay);
+    --clr-bg-footer:      rgba(15, 23, 42, 0.77);
+    --clr-bg-accent:      rgba(99, 102, 241, 0.15);
+    --clr-bg-color-sidebar: rgba(255, 255, 255, 0.06);
+    --clr-glass-bg-list:    var(--glass-subtle-bg);
+
+    --clr-text-default:  var(--text-primary);
+    --clr-text-heading:  var(--text-primary);
+    --clr-text-muted:    var(--text-muted);
+    --clr-text-link:     var(--text-link);
+
+    --clr-border-default: var(--border-default);
+    --clr-hr:             rgba(255, 255, 255, 0.10);
+
+    --clr-shadow-light: var(--shadow-lg);
+    --clr-glass-border: var(--glass-strong-border);
+    --clr-skeleton-bg:  rgba(255, 255, 255, 0.03);
+    --clr-skeleton-shimmer:
+        linear-gradient(
+            90deg,
+            rgba(255, 255, 255, 0) 0,
+            rgba(255, 255, 255, 0.03) 20%,
+            rgba(255, 255, 255, 0.06) 60%,
+            rgba(255, 255, 255, 0)
+        );
+
+    --clr-input-bg:       rgba(255, 255, 255, 0.05);
+    --clr-input-focus-bg: rgba(255, 255, 255, 0.10);
+    --clr-shadow-card:    var(--shadow-md);
+
+    --clr-icon-default: var(--text-muted);
+    --clr-icon-hover:   var(--text-primary);
+
+    /* Card-circle gradient v dark mode — tmavší slate */
+    --clr-circle-gradient-start: rgba(30, 41, 59, 0.64);
+    --clr-circle-gradient-end:   rgba(15, 23, 42, 0.70);
+
+    /* Bootstrap přemostění — RGB indigo-400 */
+    --bs-primary-rgb: 129, 140, 248;
+}
+
+
+/* ==========================================================================
+ *  GLOBAL TYPOGRAFIE
+ *  System fonts aplikujeme rovnou na <body>. Bez webfontu, bez @font-face.
+ *
+ *  POZNÁMKA: V style.css máš stále @font-face deklaraci pro Inter Variable.
+ *  Tu necháme, ale fallback systém nikdy do Inter nespadne. Až ověříš,
+ *  že to vypadá dobře, můžeš @font-face úplně smazat (úspora ~30 KB).
+ * ========================================================================== */
+
+body {
+    font-family: var(--font-sans);
+}

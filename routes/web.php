@@ -14,6 +14,7 @@ use App\Http\Controllers\API\ExternalApiController;
 use App\Http\Controllers\API\SignatureController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\API\StatistikaController;
+use App\Http\Controllers\API\ExportController;
 
 
 /*
@@ -38,6 +39,21 @@ Route::post('/password/reset', [AuthController::class, 'resetPassword'])->middle
 Route::middleware(['custom.auth'])->group(function () {
     Route::get('/check-session',   [AuthController::class, 'checkSession']);
     Route::post('/extend-session', [AuthController::class, 'extendSession']);
+
+    Route::middleware(['permission:oopp.view'])->group(function () {
+    Route::get('/export/objednavky.xlsx',[ExportController::class, 'objednavky'])->name('export.objednavky');
+    Route::get('/export/karta-zamestnance/{id}.xlsx',[ExportController::class, 'kartaZamestnance'])->where('id', '[0-9]+')->name('export.karta-zamestnance');
+    });
+
+    // Aktivity uživatelů — gated stejně jako UI
+    Route::middleware(['permission:admin.users'])->group(function () {
+    Route::get('/export/aktivity.xlsx',[ExportController::class, 'aktivity'])->name('export.aktivity');
+    });
+
+    // Zaměstnanci
+    Route::middleware(['permission:admin.employees'])->group(function () {
+    Route::get('/export/zamestnanci.xlsx',[ExportController::class, 'zamestnanci'])->name('export.zamestnanci');
+    });
 });
 
 /*

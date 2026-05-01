@@ -1,12 +1,5 @@
 import {Modal} from 'bootstrap';
 import DataTable from 'datatables.net-dt';
-import JSZip from 'jszip';
-import pdfMake from 'pdfmake';
-import pdfFonts from 'pdfmake/build/vfs_fonts';
-
-window.JSZip = JSZip;
-window.pdfMake = pdfMake;
-pdfMake.addVirtualFileSystem(pdfFonts);
 
 let activitiesTable = null;
 let signatureModalInstance = null;
@@ -16,25 +9,22 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
 
 
  function prehled() {
-    console.log('script_objednávka.js: Modul inicializován.');
+    console.log('prehledObjednavek.js: Modul inicializován.');
 
     const ordersList = document.getElementById('orders-list');
     const notificationContainer = document.getElementById('notification-container');
     const signatureModalElement = document.getElementById('signatureModal');
     const signatureCanvas = document.getElementById('signatureCanvas');
-     const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
 
-     // Ověř kritické elementy
-     if (!csrfToken) {
-         console.error('CSRF token nebyl nalezen!');
-         alert('Chyba: Chybí bezpečnostní token');
-         return;
-     }
+    if (!csrfToken) {
+        console.error('CSRF token nebyl nalezen!');
+        return;
+    }
 
-     if (!ordersList) {
-         console.error('Element #orders-list nebyl nalezen!');
-         return;
-     }
+    if (!ordersList) {
+        return;
+    }
 
     const signatureCtx = signatureCanvas ? signatureCanvas.getContext('2d') : null;
     const clearSignatureBtn = document.getElementById('clearSignature');
@@ -43,19 +33,18 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
 
     if (signatureModalElement) {
         signatureModalInstance = new Modal(signatureModalElement);
-        console.log('Bootstrap Modal pro podpis inicializován.');
-    } else {
-        console.warn('Element #signatureModal nebyl nalezen. Funkce podpisu nebude fungovat.');
     }
 
     function showNotification(message, type = 'info') {
-        if (!notificationContainer) {
-            console.warn('Notification container není nalezen.');
-            return;
-        }
+        if (!notificationContainer) return;
         const notification = document.createElement('div');
         notification.classList.add('notification', type);
-        notification.textContent = message;
+        
+        let icon = 'fa-info-circle';
+        if (type === 'success') icon = 'fa-circle-check';
+        if (type === 'error') icon = 'fa-circle-exclamation';
+        
+        notification.innerHTML = `<i class="fa-solid ${icon}"></i> <div>${message}</div>`;
         notificationContainer.appendChild(notification);
         setTimeout(() => {
             notification.classList.add('show');
@@ -82,7 +71,6 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
         const pos = getPosition(e, signatureCanvas);
         signatureCtx.beginPath();
         signatureCtx.moveTo(pos.x, pos.y);
-        // ZDE: Povolíme tlačítko při prvním tahu
         if (confirmSignatureBtn) {
             confirmSignatureBtn.disabled = false;
         }
@@ -117,13 +105,10 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
         signatureCanvas.addEventListener('touchend', stopDrawing);
         signatureCanvas.addEventListener('touchcancel', stopDrawing);
 
-        // ZDE: Inicializace blankSignatureData po vykreslení canvasu
-        // Ujisti se, že canvas je prázdný, než z něj vezmeš Data URL
         setTimeout(() => {
             if (signatureCtx) {
                 signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
                 blankSignatureData = signatureCanvas.toDataURL('image/png');
-                console.log('Blank signature data initialized.');
             }
         }, 0);
     }
@@ -131,14 +116,12 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
     if (clearSignatureBtn) {
         clearSignatureBtn.addEventListener('click', () => {
             if (signatureCtx) signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-            // ZDE: Znovu zakážeme tlačítko po vymazání
             if (confirmSignatureBtn) {
                 confirmSignatureBtn.disabled = true;
             }
         });
     }
 
-    // ZDE: Sloučená a opravená obsluha closeSignatureBtn
     if (closeSignatureBtn) {
         closeSignatureBtn.addEventListener('click', () => {
             if (signatureModalInstance) {
@@ -146,7 +129,6 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
                 currentOrderId = null;
                 currentRowToUpdate = null;
                 if (signatureCtx) signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-                // ZDE: Zakážeme tlačítko i při zavření modalu
                 if (confirmSignatureBtn) {
                     confirmSignatureBtn.disabled = true;
                 }
@@ -158,33 +140,29 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
         currentOrderId = orderId;
         currentRowToUpdate = rowElement;
         if (signatureModalInstance) {
-            // ZDE: Vždy vyčistíme canvas a zakážeme tlačítko při otevření modalu
             if (signatureCtx) signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
             if (confirmSignatureBtn) {
                 confirmSignatureBtn.disabled = true;
             }
             signatureModalInstance.show();
-        } else {
-            console.error('signatureModalInstance není inicializováno. Nelze zobrazit podpisový pad.');
         }
     }
 
     function showDeleteConfirmation(orderId, rowToDelete) {
-        if (!notificationContainer) {
-            console.warn('Notification container není nalezen pro potvrzení smazání.');
-            return;
-        }
+        if (!notificationContainer) return;
         const confirmationDiv = document.createElement('div');
         confirmationDiv.classList.add('delete-confirmation');
         confirmationDiv.classList.add('shadow-error');
         confirmationDiv.innerHTML = `
             Opravdu si přejete objednávku odstranit?
-            <button class="btn btn-sm btn-danger confirm-delete-btn" data-id="${orderId}">
-                <i class="fa-solid fa-trash"></i>  Odstranit
-            </button>
-            <button class="btn btn-sm btn-secondary cancel-delete-btn">
-                <i class="fa-solid fa-xmark"></i> Zrušit
-            </button>
+            <div class="mt-2">
+                <button class="btn btn-sm btn-danger confirm-delete-btn" data-id="${orderId}">
+                    <i class="fa-solid fa-trash"></i> Odstranit
+                </button>
+                <button class="btn btn-sm btn-secondary cancel-delete-btn">
+                    <i class="fa-solid fa-xmark"></i> Zrušit
+                </button>
+            </div>
         `;
         notificationContainer.appendChild(confirmationDiv);
 
@@ -198,32 +176,24 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
                         'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
                         'Accept': 'application/json'
                     },
-                    body: JSON.stringify({
-                        order_id: orderId
-                    })
+                    body: JSON.stringify({ order_id: orderId })
                 })
-                    .then(response => {
-                        if (!response.ok) {
-                            return response.json().then(errorData => {
-                                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                            });
-                        }
-                        return response.json();
-                    })
-                    .then(result => {
+                .then(response => response.json())
+                .then(result => {
+                    if (result.status === 'success') {
                         showNotification(result.message, 'success');
                         if (activitiesTable) {
                             activitiesTable.row(rowToDelete).remove().draw();
-                        } else {
-                            console.warn('DataTables instance activitiesTable není dostupná.');
                         }
-                        confirmationDiv.remove();
-                    })
-                    .catch(error => {
-                        console.error('Chyba při odstraňování objednávky', error);
-                        showNotification(error.message || 'Došlo k chybě při odstraňování objednávky.', 'error');
-                        confirmationDiv.remove();
-                    });
+                    } else {
+                        showNotification(result.error || 'Chyba při mazání.', 'error');
+                    }
+                    confirmationDiv.remove();
+                })
+                .catch(error => {
+                    showNotification('Chyba při komunikaci se serverem.', 'error');
+                    confirmationDiv.remove();
+                });
             });
         }
 
@@ -236,94 +206,50 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
     }
 
     fetch('/alloders')
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(errorData => {
-                    throw new Error(errorData.error || `Chyba serveru: ${response.status}`);
-                });
-            }
-            return response.json();
-        })
+        .then(response => response.json())
         .then(data => {
             if (ordersList) ordersList.innerHTML = '';
             data.forEach(order => {
                 const tr = document.createElement('tr');
-                const img = order.obrazek ? `<img src="/images/OOPP/${order.obrazek}" alt="Obrázek produktu" style="max-width: 150px; height: auto;">` : 'Obrázek u produktu není';
+                const img = order.obrazek ? `<img src="/images/OOPP/${order.obrazek.trim()}" alt="Produkt" style="max-width: 100px; height: auto; border-radius: var(--radius-sm);">` : 'Bez obrázku';
                 const dateOrig = new Date(order.datum_objednani);
-                const day = dateOrig.getDate();
-                const month = dateOrig.getMonth() + 1;
-                const year = dateOrig.getFullYear();
-                const formDate = `${day}.${month}.${year}`;
+                const formDate = dateOrig.toLocaleDateString('cs-CZ');
 
                 let statusHtml;
                 const currentStatus = order.status.toLowerCase();
 
                 if (currentStatus === 'cekajici') {
                     statusHtml = '<span class="status cekajici">Čekající</span>';
-                } else if (currentStatus === 'objednáno') {
+                } else if (currentStatus === 'objednáno' || currentStatus === 'objednano') {
                     statusHtml = '<span class="status objednáno">Objednáno</span>';
-                } else if (currentStatus === 'vydáno') {
+                } else if (currentStatus === 'vydáno' || currentStatus === 'vydano') {
                     statusHtml = '<span class="status vydáno">Vydáno</span>';
                 } else {
                     statusHtml = `<span>${order.status}</span>`;
                 }
 
-                let buttonsHTML = `
-                    <button class='vydat btn btn-sm btn-success me-1' data-id='${order.id}'>Vydat</button>
-                    <button class="objednat btn btn-sm btn-warning me-1" data-id="${order.id}">Objednat</button>
+                const buttonsHTML = `
+                    <button class='vydat btn btn-sm btn-success me-1 ${ (currentStatus === 'vydáno' || currentStatus === 'vydano') ? 'd-none' : '' }' data-id='${order.id}'>Vydat</button>
+                    <button class="objednat btn btn-sm btn-warning me-1 ${ (currentStatus !== 'cekajici') ? 'd-none' : '' }" data-id="${order.id}">Objednat</button>
                     <button class="odstranit btn btn-sm btn-danger" data-id="${order.id}">Odstranit</button>
                 `;
 
                 tr.innerHTML = `
-                    <td>${formDate}</td>
+                    <td class="text-center">${formDate}</td>
                     <td>${order.jmeno} ${order.prijmeni}</td>
                     <td>${order.produkt}</td>
-                    <td>${order.velikost}</td>
-                    <td>${img}</td>
-                    <td class="status-cell">${statusHtml}</td>
-                    <td>${buttonsHTML}</td>
+                    <td class="text-center">${order.velikost}</td>
+                    <td class="text-center">${order.pocet_kusu ?? 1}</td>
+                    <td class="text-center">${img}</td>
+                    <td class="text-center status-cell">${statusHtml}</td>
+                    <td class="text-center">${buttonsHTML}</td>
                 `;
                 if (ordersList) ordersList.appendChild(tr);
-
-                if (currentStatus === 'objednáno' || currentStatus === 'vydáno') {
-                    const objednatButton = tr.querySelector('.objednat');
-                    if (objednatButton) {
-                        objednatButton.classList.add('d-none');
-                    }
-                }
-                if (currentStatus === 'vydáno') {
-                    const vydatButton = tr.querySelector('.vydat');
-                    if (vydatButton) {
-                        vydatButton.classList.add('d-none');
-                    }
-                }
             });
 
             const tableElement = document.getElementById('activitiesTable');
             if (tableElement) {
                 activitiesTable = new DataTable(tableElement, {
-                    dom:
-                        "<'row align-items-center mb-2 me-2'<'col-auto'B><'col text-end'f >>" +
-                        "<'table-responsive't>" +
-                        "<'row align-items-center mt-2 mb-2'<'col text-center'p>>",
-                    buttons: [
-                        {
-                            extend: 'excelHtml5', text: '<img src="/images/excel1.svg" ' +
-                                'alt="Excel" width="30">', titleAttr: 'Exportovat tabulku do Exlu'
-                            , className: 'btn p-0 m-2'
-                        },
-                        {
-                            extend: 'pdfHtml5', text: '<img src="/images/PDF.svg" ' +
-                                'alt="PDF" width="30">', titleAttr: 'Exportovat tabulku do PDF'
-                            , className: 'btn p-0 m-2'
-                        },
-                        {
-                            extend: 'print', text: '<img src="/images/printer.svg" ' +
-                                'alt="PDF" width="30">', titleAttr: 'Vytisknout tabulku '
-                            , className: 'btn p-0 m-2'
-                        }
-                    ],
-                    rowReorder: true,
                     paging: true,
                     searching: true,
                     info: false,
@@ -332,19 +258,15 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
                         url: "/assets/cs.json"
                     }
                 });
-                console.log('DataTables pro aktivity inicializováno.');
-            } else {
-                console.warn('Element #activitiesTable nebyl nalezen, DataTables nebude inicializováno.');
             }
 
             if (tableElement) {
                 tableElement.addEventListener('click', function(event) {
-                    const target = event.target;
+                    const target = event.target.closest('button');
+                    if (!target) return;
 
                     if (target.classList.contains('vydat')) {
-                        const orderId = target.dataset.id;
-                        const rowElement = target.closest('tr');
-                        showSignaturePad(orderId, rowElement);
+                        showSignaturePad(target.dataset.id, target.closest('tr'));
                     }
 
                     if (target.classList.contains('objednat')) {
@@ -354,44 +276,36 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
                         fetch('/objednat', {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json', // <-- ZMĚŇ
+                                'Content-Type': 'application/json',
                                 'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
                                 'Accept': 'application/json'
                             },
-                            body: JSON.stringify({ order_id: orderId }) // <-- ZMĚŇ na JSON
+                            body: JSON.stringify({ order_id: orderId })
                         })
-                            .then(response => {
-                                if (!response.ok) {
-                                    return response.json().then(errorData => {
-                                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                                    });
-                                }
-                                return response.json();
-                            })
-                            .then(result => {
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.status === 'success') {
                                 showNotification(result.message, 'success');
-                                if (result.success && activitiesTable) {
-                                    const table = activitiesTable;
-                                    const rowIndex = table.row(rowToUpdate).index();
-                                    const statusColumnIndexLocal = Array.from(tableElement.querySelectorAll('th'))
-                                        .findIndex(th => th.textContent.includes("Status"));
-                                    if (statusColumnIndexLocal >= 0) {
-                                        table.cell(rowIndex, statusColumnIndexLocal)
-                                            .data('<span class="status objednáno">Objednáno</span>').draw(false);
+                                if (activitiesTable) {
+                                    const row = activitiesTable.row(rowToUpdate);
+                                    const statusCell = row.node().querySelector('.status-cell');
+                                    if (statusCell) {
+                                        statusCell.innerHTML = '<span class="status objednáno">Objednáno</span>';
+                                        row.invalidate().draw(false);
                                     }
                                     target.classList.add('d-none');
                                 }
-                            })
-                            .catch(error => {
-                                console.error('Chyba objednání:', error);
-                                showNotification('Chyba při objednání.', 'error');
-                            });
+                            } else {
+                                showNotification(result.error || 'Chyba při objednání.', 'error');
+                            }
+                        })
+                        .catch(error => {
+                            showNotification('Chyba při komunikaci se serverem.', 'error');
+                        });
                     }
 
                     if (target.classList.contains('odstranit')) {
-                        const orderId = target.dataset.id;
-                        const rowToDelete = target.closest('tr');
-                        showDeleteConfirmation(orderId, rowToDelete);
+                        showDeleteConfirmation(target.dataset.id, target.closest('tr'));
                     }
                 });
             }
@@ -400,10 +314,9 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
                 confirmSignatureBtn.addEventListener('click', () => {
                     const signatureData = signatureCanvas.toDataURL('image/png');
 
-                    // ZDE: Kontrola prázdného podpisu
                     if (blankSignatureData && signatureData === blankSignatureData) {
                         showNotification('Prosím, nakreslete podpis.', 'error');
-                        return; // Zastavíme odeslání
+                        return;
                     }
 
                     if (currentOrderId && currentRowToUpdate) {
@@ -411,55 +324,36 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': csrfToken.getAttribute('content'), // <-- PŘIDEJ TOHLE
+                                'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
                                 'Accept': 'application/json'
                             },
                             body: JSON.stringify({ order_id: currentOrderId, signature: signatureData })
                         })
-                            .then(response => {
-                                if (!response.ok) {
-                                    return response.json().then(errorData => {
-                                        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
-                                    });
-                                }
-                                return response.json();
-                            })
-                            .then(result => {
-                                showNotification(result.message, 'success');
-                                if (signatureModalInstance) {
-                                    signatureModalInstance.hide();
-                                    if (signatureCtx) signatureCtx.clearRect(0, 0, signatureCanvas.width, signatureCanvas.height);
-                                    // ZDE: Po úspěšném podpisu zakážeme tlačítko
-                                    if (confirmSignatureBtn) { // Přidána kontrola existence
-                                        confirmSignatureBtn.disabled = true;
-                                    }
-                                }
-
+                        .then(response => response.json())
+                        .then(result => {
+                            if (result.status === 'success') {
+                                showNotification('Objednávka byla úspěšně předána.', 'success');
+                                if (signatureModalInstance) signatureModalInstance.hide();
                                 if (activitiesTable && currentRowToUpdate) {
                                     activitiesTable.row(currentRowToUpdate).remove().draw();
-                                } else {
-                                    console.warn('DataTables instance nebo referenční řádek nejsou dostupné pro odstranění.');
                                 }
-
-                                currentOrderId = null;
-                                currentRowToUpdate = null;
-                            })
-                            .catch(error => {
-                                console.error('Chyba při ukládání podpisu', error);
-                                showNotification('Chyba při ukládání podpisu.', 'error');
-                                currentOrderId = null;
-                                currentRowToUpdate = null;
-                            });
-                    } else {
-                        showNotification('Nedošlo k výběru objednávky nebo chybí reference na řádek.', 'error');
+                            } else {
+                                showNotification(result.error || 'Chyba při ukládání.', 'error');
+                            }
+                            currentOrderId = null;
+                            currentRowToUpdate = null;
+                        })
+                        .catch(error => {
+                            showNotification('Chyba při komunikaci se serverem.', 'error');
+                        });
                     }
                 });
             }
 
         })
         .catch(error => {
-            console.error('Chyba při načítání všech objednávek:', error);
-            showNotification(error.message || 'Nepodařilo se načíst objednávky.', 'error');
+            console.error('Chyba při načítání objednávek:', error);
+            showNotification('Nepodařilo se načíst objednávky.', 'error');
         });
 }
 document.addEventListener('DOMContentLoaded', prehled);

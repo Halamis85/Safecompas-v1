@@ -1,0 +1,363 @@
+
+/* ==========================================================================
+ *  1) UTILITNÍ TŘÍDY pro glass povrchy
+ *  Tahle dvě pravidla jsou základ celého glass systému aplikace.
+ *  Místo na prvek dávat 5 vlastností ručně, použij jednu z těchto tříd.
+ * ========================================================================== */
+
+.surface-strong {
+    background-color: var(--glass-strong-bg);
+    backdrop-filter: var(--glass-strong-blur);
+    -webkit-backdrop-filter: var(--glass-strong-blur);
+    border: 1px solid var(--glass-strong-border);
+    box-shadow: var(--glass-strong-shadow);
+    border-radius: var(--radius-lg);
+}
+
+.surface-subtle {
+    background-color: var(--glass-subtle-bg);
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+    border: 1px solid var(--glass-subtle-border);
+    box-shadow: var(--glass-subtle-shadow);
+    border-radius: var(--radius-lg);
+}
+
+
+/* ==========================================================================
+ *  2) Bootstrap .card
+ *  Sjednoceno přes glass-strong tokeny. Funguje v light i dark.
+ * ========================================================================== */
+
+.card {
+    background: var(--glass-strong-bg);
+    color: var(--text-primary);
+    border: 1px solid var(--glass-strong-border);
+    box-shadow: var(--glass-strong-shadow);
+    border-radius: var(--radius-xl);
+    backdrop-filter: var(--glass-strong-blur);
+    -webkit-backdrop-filter: var(--glass-strong-blur);
+    transition: box-shadow var(--transition-base);
+}
+
+.card:hover {
+    box-shadow: var(--shadow-lg);
+}
+
+.card-header {
+    background-color: var(--glass-subtle-bg);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+    padding: 1rem 1.25rem;
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+}
+
+.card-body {
+    padding: var(--space-card);
+    color: var(--text-primary);
+}
+
+.card-footer {
+    background-color: var(--glass-subtle-bg);
+    border-top: 1px solid var(--border-default);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    color: var(--text-secondary);
+    padding: 0.85rem 1.25rem;
+}
+
+
+/* ==========================================================================
+ *  3) Bootstrap .modal-content (default — bez .glass-modal třídy)
+ *  Zachovává čitelnost v obou módech. Pro výrazný glass použij .glass-modal.
+ * ========================================================================== */
+
+.modal-content {
+    background: var(--surface-overlay);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+    box-shadow: var(--shadow-xl);
+    border-radius: var(--radius-xl);
+}
+
+.modal-header {
+    border-bottom: none; /* zachováváme původní behaviour */
+    padding: 1.25rem 1.5rem 0.5rem;
+}
+
+.modal-footer {
+    border-top: none;
+    padding: 0.5rem 1.5rem 1.25rem;
+    gap: 0.5rem;
+}
+
+.modal-body {
+    padding: 1rem 1.5rem;
+}
+
+.modal-title {
+    color: var(--text-primary);
+    font-weight: var(--font-semibold);
+}
+
+
+/* ==========================================================================
+ *  4) Glass-modal (výrazný tmavý glass — Lékárničky)
+ *  Zachováváme 25px blur a saturation 180%, což byla vědomá designová volba.
+ *  Texty se přepnou přes lokální token override (tabulky/formuláře už to mají).
+ * ========================================================================== */
+
+.glass-modal {
+    background: var(--glass-modal-bg);
+    backdrop-filter: var(--glass-modal-blur) saturate(180%);
+    -webkit-backdrop-filter: var(--glass-modal-blur) saturate(180%);
+    border: 1px solid var(--glass-modal-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--glass-modal-shadow);
+
+    /* Lokální token override — vše uvnitř automaticky vidí "tmavý kontext" */
+    --text-primary:   var(--text-on-dark);
+    --text-secondary: var(--palette-slate-300);
+    --text-muted:     var(--palette-slate-400);
+    --border-default: rgba(255, 255, 255, 0.10);
+    --border-strong:  rgba(255, 255, 255, 0.20);
+    --surface-sunken: rgba(255, 255, 255, 0.04);
+
+    color: var(--text-on-dark);
+}
+
+.glass-modal .modal-header,
+.glass-modal .modal-footer {
+    border: none;
+}
+
+.glass-modal .modal-title {
+    color: var(--text-on-dark);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.glass-modal .modal-body {
+    color: var(--text-on-dark);
+}
+
+
+/* ==========================================================================
+ *  5) m-bg-tran — světlý glass kontejner
+ *  Používá se na `/prehled` jako wrapper kolem `.bg-light` s tabulkou.
+ *  Sjednoceno do glass-subtle stylu. Bílý text v tomto kontextu nedává
+ *  smysl — ten dříve používal text bílý, ale přitom byl uvnitř kontextu,
+ *  kde patří tmavý text. Opraveno na adaptivní `--text-primary`.
+ * ========================================================================== */
+
+.m-bg-tran {
+    background-color: var(--glass-subtle-bg);
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+    border: 1px solid var(--glass-subtle-border);
+    box-shadow: var(--glass-subtle-shadow);
+    border-radius: var(--radius-xl);
+    padding: var(--space-card);
+    color: var(--text-primary);
+}
+
+
+/* ==========================================================================
+ *  6) bg-light — Bootstrap utility, používá se uvnitř m-bg-tran
+ *  Místo natvrdo zadané barvy `--clr-bg-table-baground` použijeme
+ *  surface-raised, který se v dark/light přizpůsobí.
+ * ========================================================================== */
+
+.bg-light {
+    background-color: var(--surface-raised);
+    padding: 1.25rem;
+    border-radius: var(--radius-lg);
+    color: var(--text-primary);
+}
+
+
+/* ==========================================================================
+ *  7) List group (autocomplete, dropdown výsledky)
+ * ========================================================================== */
+
+.list-group {
+    position: relative;
+    width: 100%;
+    z-index: 100;
+    border: 1px solid var(--border-default);
+    background-color: var(--glass-subtle-bg);
+    box-shadow: var(--glass-subtle-shadow);
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    overflow: hidden;
+}
+
+.list-group-item {
+    background-color: transparent;
+    color: var(--text-primary);
+    border: none;
+    padding: 0.75rem 1rem;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+    cursor: pointer;
+}
+
+.list-group-item:hover,
+.list-group-item.active {
+    background-color: var(--accent-primary-soft);
+    color: var(--text-primary);
+}
+
+
+/* ==========================================================================
+ *  8) Footer (sjednoceno se zbytkem)
+ * ========================================================================== */
+
+.footer {
+    background-color: var(--glass-subtle-bg);
+    border-top: 1px solid var(--border-default);
+    box-shadow: var(--glass-subtle-shadow);
+    color: var(--text-secondary);
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    transition:
+        background-color var(--transition-base),
+        border-color var(--transition-base),
+        box-shadow var(--transition-base),
+        color var(--transition-base);
+}
+
+.footer .text-footer {
+    margin-left: 2rem;
+    font-size: var(--text-sm);
+    line-height: var(--leading-normal);
+    color: var(--text-muted);
+    text-align: left;
+}
+
+.footer .text-footer p {
+    margin-bottom: 1rem;
+}
+
+.footer .text-footer p:last-child {
+    margin-bottom: 0;
+}
+
+.footer .icon-link {
+    margin: 1rem 0 1rem 1.25rem;
+}
+
+.footer .icon-link a {
+    color: var(--text-muted);
+    transition: color var(--transition-fast), transform var(--transition-fast);
+    margin: 0 0.5rem;
+}
+
+.footer .icon-link a:hover {
+    color: var(--accent-primary);
+    transform: scale(1.1);
+}
+
+
+/* ==========================================================================
+ *  9) btn-close — zavírací křížek v modalech
+ *  Zachováváme funkčnost (Bootstrap data-bs-dismiss spoléhá na pozadí
+ *  s SVG křížkem). Sjednoceno na danger barvy z token systému.
+ *
+ *  Logika: výchozí stav je decentní (šedý kruh), hover/focus je výrazně
+ *  červený s rotací — uživatel jasně vidí, kam klikne.
+ * ========================================================================== */
+
+.btn-close {
+    background-color: rgba(0, 0, 0, 0.08);
+    border-radius: 50%;
+    opacity: 0.7;
+    transition:
+        background-color var(--transition-base),
+        opacity var(--transition-base),
+        transform var(--transition-base),
+        box-shadow var(--transition-base);
+    padding: 0.4em;
+    background-size: 0.75em;
+    background-position: center;
+    border: 1px solid transparent;
+    box-sizing: content-box;
+    cursor: pointer;
+}
+
+.btn-close:hover {
+    background-color: var(--state-danger-strong);
+    opacity: 1;
+    transform: rotate(90deg) scale(1.05);
+    box-shadow: 0 0 0.75rem rgba(239, 68, 68, 0.5);
+    border-color: var(--state-danger-strong);
+}
+
+.btn-close:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem var(--state-danger-bg);
+}
+
+/* Dark mode — bílý křížek a světlejší pozadí výchozího stavu */
+body.dark-mode .btn-close,
+[data-bs-theme="dark"] .btn-close {
+    background-color: rgba(255, 255, 255, 0.15);
+    opacity: 1;
+    /* Bootstrap defaultně dává `filter: invert(1)` — to nám zničí červenou
+       při hoveru. Přepíšeme bílým SVG křížkem. */
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e");
+    filter: none;
+}
+
+body.dark-mode .btn-close:hover,
+[data-bs-theme="dark"] .btn-close:hover,
+.glass-modal .btn-close:hover {
+    background-color: var(--state-danger-strong);
+}
+
+/* Glass modal má vždy tmavé pozadí, takže bílý křížek bez ohledu na mód */
+.glass-modal .btn-close {
+    background-color: rgba(255, 255, 255, 0.15);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath d='M.293.293a1 1 0 0 1 1.414 0L8 6.586 14.293.293a1 1 0 1 1 1.414 1.414L9.414 8l6.293 6.293a1 1 0 0 1-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 0 1-1.414-1.414L6.586 8 .293 1.707a1 1 0 0 1 0-1.414z'/%3e%3c/svg%3e");
+    opacity: 1;
+    filter: none;
+}
+
+
+/* ==========================================================================
+ *  10) hr (oddělovač)
+ * ========================================================================== */
+
+hr,
+.hr {
+    border-color: var(--border-default);
+    opacity: 0.5;
+}
+
+
+/* ==========================================================================
+ *  11) Card-circle SHARED — barvy a okraje
+ *  Pouze barvy/okraje. Animace, hover efekty a velikost zůstávají
+ *  ve style.css beze změny (Restart 5 udělá animace).
+ * ========================================================================== */
+
+/*
+ * .card-circle a .card-circle-weather používají radial gradient.
+ * Refaktorujeme jen pozadí, ostatní vlastnosti (velikost, animace)
+ * zůstávají v původním style.css.
+ */
+body.dark-mode .card-circle,
+body.dark-mode .card-circle-new-oopp,
+body.dark-mode .card-circle-icons {
+    background: radial-gradient(
+        circle at top left,
+        rgba(30, 41, 59, 0.55),
+        rgba(15, 23, 42, 0.65)
+    );
+}
