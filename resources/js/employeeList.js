@@ -4,7 +4,6 @@ import DataTable from 'datatables.net-dt';
 // Proměnná pro instanci DataTables, abychom ji mohli zničit/znovu inicializovat
 let employeesDataTable;
 function employeeList() {
-    console.log('employees.js: Script pro správu zaměstnanců inicializován.');
 
     const addEmployeeForm  = document.getElementById('add-employee-form');
     const emploeesTable = document.getElementById('employees-table'); // Změněno z emploeeslist
@@ -85,7 +84,7 @@ function employeeList() {
                     if (data.status === 'success') {
                         displayMessage('Zaměstnanec byl úspěšně přidán!', true);
                         addEmployeeForm.reset();
-                        reloadEmployeesTable(); // Znovu načti tabulku
+                        loadAndInitEmployeesTable();
                     } else {
                         // Toto by teoreticky nemělo nastat, pokud !response.ok bylo ošetřeno výše.
                         // Ale jako fallback pro "logické" chyby s 200 OK status.
@@ -159,19 +158,11 @@ function employeeList() {
                         searching: true
                     });
 
-                    // Po inicializaci DataTables musíme delegovat event listener
-                    // protože se tlačítka znovu generují
-                    if (window._employeeListAbortCtrl) {
-                        window._employeeListAbortCtrl.abort();
-                    }
-                    window._employeeListAbortCtrl = new AbortController();
                     emploeesTable.addEventListener('click', (event) => {
                         const btn = event.target.closest('.delete-employee');
                         if (!btn) return;
-                        const userID = btn.dataset.id;
-                        handleDeleteUser(userID);
-                    }, { signal: window._employeeListAbortCtrl.signal });
-                    console.log("DataTables pro zaměstnance inicializováno.");
+                        handleDeleteUser(btn.dataset.id);
+                    });
 
                 } else {
                     console.warn('employees.js: Element #employees-table nebyl nalezen.');
@@ -182,11 +173,6 @@ function employeeList() {
                 displayMessage('Chyba při načítání dat zaměstnanců: ' + (error.message || 'Nelze se připojit k serveru.'), false);
             });
     }
-    // Funkce pro znovu načtení dat DataTables
-    function reloadEmployeesTable() {
-        loadAndInitEmployeesTable();
-    }
-
     // --- Logika pro smazání uživatele ---
     function handleDeleteUser(userID) {
         fetch(`/employee/${userID}`, {
@@ -207,7 +193,7 @@ function employeeList() {
             .then(result => {
                 if (result.status === 'success') {
                     displayMessage('Zaměstnanec byl úspěšně odebrán.', true);
-                    reloadEmployeesTable();
+                    loadAndInitEmployeesTable();
                 } else {
                     displayMessage('Chyba při odebrání zaměstnance: ' + (result.message || 'Neznámá chyba.'), false);
                 }

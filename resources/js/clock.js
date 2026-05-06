@@ -166,8 +166,7 @@ export function init() {
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                console.log('Body class changed, redrawing clock.');
-                drawClock(); // Překreslíme hodiny s novými barvami
+                drawClock();
             }
         });
     });

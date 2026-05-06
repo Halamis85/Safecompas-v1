@@ -6,9 +6,7 @@
 
         // --- Kontrola existence klíčových prvků pro téma ---
         if (!themeToggleBtn || !bodyElement) {
-            console.warn('layout.js: Tlačítko pro přepínání tématu nebo element body nebyly nalezeny. Ujistěte se, že HTML elementy mají správná ID.');
-        } else {
-            console.log('layout.js: Tlačítko a body element nalezeny.'); // Nový log
+            console.warn('layout.js: Tlačítko pro přepínání tématu nebo element body nebyly nalezeny.');
         }
 
         // --- Funkce pro nastavení tématu ---
@@ -200,6 +198,8 @@ let inactivityTime = function () {
         resetTimer();
 };
 
+    inactivityTime();
+
     const toggleButton = document.getElementById('profileSidebarToggle');
     const sidebar = document.getElementById('profileSidebar');
     const overlay = document.getElementById('sidebarOverlay');
@@ -209,16 +209,16 @@ let inactivityTime = function () {
         sidebar.classList.add('show');
         overlay.classList.add('show');
         document.body.classList.add('no-scroll');
-        toggleButton.classList.add('hide-icon'); // Skryjeme tlačítko
-        profileSidebarToggle.classList.add('hidden-toggle');
+        toggleButton.classList.add('hide-icon');
+        toggleButton.classList.add('hidden-toggle');
     }
 
     function closeSidebar() {
         sidebar.classList.remove('show');
         overlay.classList.remove('show');
         document.body.classList.remove('no-scroll');
-        toggleButton.classList.remove('hide-icon'); // Znovu zobrazíme tlačítko
-        profileSidebarToggle.classList.remove('hidden-toggle');
+        toggleButton.classList.remove('hide-icon');
+        toggleButton.classList.remove('hidden-toggle');
     }
 
     if (toggleButton && sidebar && overlay && closeButton) {

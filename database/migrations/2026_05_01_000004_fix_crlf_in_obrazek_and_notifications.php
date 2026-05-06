@@ -7,13 +7,20 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // TRIM v MySQL odstraňuje jen mezery — REPLACE(CHAR(13/10)) odstraní skutečné CR LF bajty
-        DB::statement("
-            UPDATE produkty
-               SET obrazek = REPLACE(REPLACE(obrazek, CHAR(13), ''), CHAR(10), '')
-             WHERE LOCATE(CHAR(13), obrazek) > 0
-                OR LOCATE(CHAR(10), obrazek) > 0
-        ");
+        // MySQL umí LOCATE(), SQLite v testech ne. Tady je objem dat malý,
+        // takže portable PHP průchod je čitelnější a bezpečný pro oba drivery.
+        DB::table('produkty')
+            ->whereNotNull('obrazek')
+            ->orderBy('id')
+            ->each(function ($row) {
+                if (!str_contains($row->obrazek, "\r") && !str_contains($row->obrazek, "\n")) {
+                    return;
+                }
+
+                DB::table('produkty')
+                    ->where('id', $row->id)
+                    ->update(['obrazek' => str_replace(["\r", "\n"], '', $row->obrazek)]);
+            });
 
         // Notifikace mají data jako JSON — parsujeme v PHP, ať JSON zůstane platný
         DB::table('notifications')

@@ -41,6 +41,11 @@ class LekarnickeMaterial extends Model
         return $this->hasMany(VydejMaterialu::class, 'material_id');
     }
 
+    public function objednavky()
+    {
+        return $this->hasMany(LekarnickyMaterialObjednavka::class, 'material_id');
+    }
+
     public function getJeExpirovanyAttribute()
     {
         return $this->datum_expirace && $this->datum_expirace < now();

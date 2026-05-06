@@ -42,21 +42,43 @@
     0%, 100% { transform: translateY(0); }
     50%      { transform: translateY(-6px); }
 }
+@keyframes shadow {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(0.2); opacity: 0.1; }
+}
 
 /* Aplikace na karty s class="floating" — JS/Blade tuhle třídu přidá tam,
    kde má smysl. Předtím se to dávalo na všechny .card-circle, což vedlo
    k tomu, že počasí widget plaval taky (a u widgetu s pozorovaným časem
    to bylo rušivé). */
 .floating {
+    position: relative;
     animation: float 5s ease-in-out infinite;
     will-change: transform;
 }
 
-.floating:nth-child(2n) { animation-delay: 0.4s; }
-.floating:nth-child(3n) { animation-delay: 0.9s; }
-.floating:nth-child(4n) { animation-delay: 1.3s; }
+.floating:nth-child(2n) { animation-delay: 0.8s; }
+.floating:nth-child(3n) { animation-delay: 1.2s; }
+.floating:nth-child(4n) { animation-delay: 1.8s; }
+.floating:nth-child(5n) { animation-delay: 0.8s; }
+.floating:nth-child(6n) { animation-delay: 2.0s; }
 
-
+.floating::after {
+    content: "";
+    position: absolute;
+    bottom: -30px; /* Umístění pod prvkem */
+    left: 10%;
+    width: 80%;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    filter: blur(4px);
+    animation: shadow 5s ease-in-out infinite;
+}
+.floating:hover
+ {
+    animation-play-state: paused;
+}
 /* ==========================================================================
  *  3) Wave-pop — jednorázové "naskočení" karty pří načtení
  *  Předtím byla nekonečně přehrávaná na .animated-circle-icons.

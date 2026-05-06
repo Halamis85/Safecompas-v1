@@ -30,23 +30,58 @@
 
 .card-circle h6,
 .card-circle h2,
-.card-circle .nadpis {
+.card-circle .nadpis
+ {
     transition: color var(--transition-base), transform var(--transition-base);
     color: var(--text-primary);
 }
 
-.card-circle:hover {
+.card-circle:hover,
+.card-circle-primary:hover {
     transform: translateY(-8px) scale(1.04);
     box-shadow:
         var(--shadow-lg),
-        0 0 25px var(--glow-color, rgba(255, 255, 255, 0.2));
+        0 0 25px var(--glow-color, rgba(255, 255, 255, 0.3));
 }
 
 /* Pozastavit float animaci při hoveru (z animations.css) */
-.card-circle.floating:hover,
-.card-circle-weather.floating:hover {
-    animation-play-state: paused;
+
+
+.card-circle-primary {
+     background: 
+    radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.4) 0%, transparent 45%),
+    radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.15) 0%, transparent 45%);
+
+    width: clamp(70px, 8vw, 130px);
+    height: clamp(70px, 8vw, 130px);
+    border-radius: 50%;
+    transition: all var(--transition-bouncy);
+    cursor: pointer;
+    border: 1.5px solid var(--glass-strong-border);
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.30);
+    display: flex;
+    gap: 5px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
+
+.card-circle-primary h2 {
+    font-size: 2rem !important;
+    margin: 0 !important;
+    order: 1;
+    font-weight: 600 !important;
+}
+
+.card-circle-primary h6.nadpis {
+    font-size: 0.9rem !important;
+    margin: 0 !important;
+    opacity: 0.9;
+    text-transform: uppercase;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+}
+
 
 
 /* ==========================================================================
@@ -278,9 +313,9 @@
     gap: 1.5rem;
     justify-items: center;
     align-items: center;
-    margin-top: 2rem;
+    margin-top: rem;
     margin-bottom: 3rem;
-    padding: 0 1rem;
+    padding: 0 0.5rem;
 }
 
 @media (min-width: 992px) {
@@ -363,7 +398,978 @@
 
 
 /* ==========================================================================
- *  10) Plán budovy
+ *  10) Lékárničky — přehled a detail
+ * ========================================================================== */
+
+.lekarnicky-hero,
+.lekarnicky-panel {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap:1rem;
+    padding: 1rem;
+    background-color: var(--glass-subtle-bg);
+    border: 1px solid var(--glass-subtle-border);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--glass-subtle-shadow);
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+}
+
+.lekarnicky-hero h1 {
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    letter-spacing: 0;
+}
+
+.lekarnicky-hero-actions,
+.lekarnicky-view-tools {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.lekarnicky-view-tools {
+    min-width: min(100%, 680px);
+}
+
+.lekarnicky-view-tools .input-group {
+    min-width: 320px;
+}
+
+.lekarnicky-view-tools .form-select {
+    max-width: 220px;
+}
+
+.lekarnicky-stats-grid,
+.lekarnicky-action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+.lekarnicky-stat-card,
+.lekarnicky-action-card {
+    min-width: 0;
+    border: 1px solid var(--glass-subtle-border);
+    border-radius: var(--radius-xl);
+    background: var(--glass-subtle-bg);
+    box-shadow: var(--glass-subtle-shadow);
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+}
+
+.lekarnicky-stat-card {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem;
+}
+
+.lekarnicky-stat-card .stat-icon {
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-lg);
+    background: var(--stat-soft, var(--accent-primary-soft));
+    color: var(--stat-color, var(--accent-primary));
+    font-size: var(--text-xl);
+}
+
+.lekarnicky-stat-card span {
+    display: block;
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    line-height: var(--leading-tight);
+    text-transform: uppercase;
+}
+
+.lekarnicky-stat-card strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: var(--text-2xl);
+    line-height: var(--leading-tight);
+}
+
+.lekarnicky-stat-card.stat-primary { --stat-color: var(--accent-primary); --stat-soft: var(--accent-primary-soft); }
+.lekarnicky-stat-card.stat-success { --stat-color: var(--state-success-fg); --stat-soft: var(--state-success-bg); }
+.lekarnicky-stat-card.stat-warning { --stat-color: var(--state-warning-fg); --stat-soft: var(--state-warning-bg); }
+.lekarnicky-stat-card.stat-danger { --stat-color: var(--state-danger-fg); --stat-soft: var(--state-danger-bg); }
+.lekarnicky-stat-card.stat-info { --stat-color: var(--state-info-fg); --stat-soft: var(--state-info-bg); }
+.lekarnicky-stat-card.stat-muted { --stat-color: var(--text-muted); --stat-soft: var(--surface-sunken); }
+
+.lekarnicky-module-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--glass-subtle-border);
+    border-radius: var(--radius-xl);
+    background: var(--glass-subtle-bg);
+    box-shadow: var(--glass-subtle-shadow);
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+}
+
+.lekarnicky-module-toolbar strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: var(--text-lg);
+}
+
+.lekarnicky-module-toolbar span {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+}
+
+.lekarnicky-admin-strip,
+.lekarnicky-status-strip,
+.lekarnicky-board {
+    border: 1px solid var(--glass-subtle-border);
+    border-radius: var(--radius-xl);
+    background: var(--glass-subtle-bg);
+    box-shadow: var(--glass-subtle-shadow);
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+}
+
+.lekarnicky-admin-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1rem 1.25rem;
+}
+
+.lekarnicky-admin-strip .admin-kicker {
+    display: block;
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+}
+
+.lekarnicky-admin-strip strong {
+    display: block;
+    color: var(--text-primary);
+    font-size: var(--text-xl);
+}
+
+.lekarnicky-status-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem;
+}
+
+.lekarnicky-status-strip span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.7rem;
+    border-radius: var(--radius-full);
+    background: var(--surface-sunken);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+}
+
+.lekarnicky-status-strip strong {
+    color: var(--text-primary);
+}
+
+.lekarnicky-board {
+    padding: 1.25rem;
+}
+
+.lekarnicky-board h2 {
+    color: var(--text-primary);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    letter-spacing: 0;
+}
+
+.lekarnicky-admin-card {
+    height: 100%;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    border: 1px solid var(--glass-subtle-border);
+    border-radius: var(--radius-xl);
+    background: var(--glass-subtle-bg);
+    box-shadow: var(--glass-subtle-shadow);
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+}
+
+.lekarnicky-admin-card .admin-card-icon {
+    width: 3rem;
+    height: 3rem;
+    min-width: 3rem;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-lg);
+    background: var(--accent-primary-soft);
+    color: var(--accent-primary);
+    font-size: var(--text-2xl);
+}
+
+.lekarnicky-admin-card h2 {
+    color: var(--text-primary);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    letter-spacing: 0;
+}
+
+.lekarnicky-admin-card p {
+    color: var(--text-muted);
+}
+
+.lekarnicky-toolbar-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.lekarnicky-panel {
+    display: block;
+}
+
+.lekarnicky-card {
+    overflow: hidden;
+    position: relative;
+}
+
+.lekarnicky-card.is-warning {
+    border-color: var(--state-warning-border);
+}
+
+.lekarnicky-card-topline {
+    height: 4px;
+    background: var(--accent-primary);
+}
+
+.lekarnicky-card.is-warning .lekarnicky-card-topline {
+    background: var(--state-warning-strong);
+}
+
+.lekarnicky-card .card-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+
+.lekarnicky-card-title {
+    min-width: 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.lekarnicky-card-title h6 {
+    color: var(--text-primary);
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+}
+
+.lekarnicky-card-title small,
+.lekarnicky-card-meta {
+    color: var(--text-muted);
+}
+
+.lekarnicky-card-icon {
+    width: 2.35rem;
+    height: 2.35rem;
+    min-width: 2.35rem;
+    display: grid;
+    place-items: center;
+    border-radius: var(--radius-md);
+    background: var(--accent-primary-soft);
+    color: var(--accent-primary);
+}
+
+.lekarnicky-card-meta {
+    display: grid;
+    gap: 0.45rem;
+    font-size: var(--text-sm);
+}
+
+.lekarnicky-card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.lekarnicky-alert-icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+
+.lekarnicky-alert-icons span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 2rem;
+    padding: 0.35rem 0.55rem;
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-full);
+    background: var(--surface-sunken);
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+}
+
+.lekarnicky-alert-icons .is-active.warning {
+    border-color: var(--state-warning-border);
+    background: var(--state-warning-bg);
+    color: var(--state-warning-fg);
+}
+
+.lekarnicky-alert-icons .is-active.danger {
+    border-color: var(--state-danger-border);
+    background: var(--state-danger-bg);
+    color: var(--state-danger-fg);
+}
+
+.lekarnicky-alert-icons .is-active.info {
+    border-color: var(--state-info-border);
+    background: var(--state-info-bg);
+    color: var(--state-info-fg);
+}
+
+.lekarnicky-alert-icons .is-active.muted {
+    border-color: var(--border-default);
+    background: var(--accent-primary-soft);
+    color: var(--accent-primary);
+}
+
+.lekarnicky-card-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.lekarnicky-card-metrics > div {
+    min-width: 0;
+    padding: 0.75rem;
+    border-radius: var(--radius-md);
+    background: var(--surface-sunken);
+    text-align: center;
+}
+
+.lekarnicky-card-metrics small {
+    display: block;
+    color: var(--text-muted);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+}
+
+.lekarnicky-card-metrics strong {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-primary);
+    font-size: var(--text-xl);
+    line-height: var(--leading-tight);
+}
+
+.lekarnicky-card-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+    gap: 0.45rem;
+}
+
+.lekarnicky-card-actions .btn {
+    min-width: 0;
+    white-space: nowrap;
+}
+
+#lekarnickyMaterialOrdersTable .btn-group,
+#vydejMaterialTable .btn-group {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.25rem;
+}
+
+#lekarnickyMaterialOrdersTable .btn,
+#vydejMaterialTable .btn {
+    white-space: nowrap;
+}
+
+.lekarnicky-empty-state {
+    display: grid;
+    place-items: center;
+    gap: 0.4rem;
+    min-height: 220px;
+    border: 1px dashed var(--border-default);
+    border-radius: var(--radius-xl);
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.lekarnicky-empty-state i {
+    color: var(--accent-primary);
+    font-size: var(--text-4xl);
+}
+
+.lekarnicky-empty-state strong {
+    color: var(--text-primary);
+    font-size: var(--text-lg);
+}
+
+.detail-lekarnicky-modal .modal-dialog {
+    max-width: 1180px;
+}
+
+.detail-lekarnicky-modal .modal-content {
+    max-height: calc(100vh - 2rem);
+}
+
+.detail-lekarnicky-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 0.75rem;
+}
+
+.detail-info-item,
+.detail-popis {
+    min-width: 0;
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.detail-info-label {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-bottom: 0.45rem;
+    color: var(--text-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+    text-transform: uppercase;
+}
+
+.detail-info-item strong,
+.detail-info-item span:not(.detail-info-label),
+.detail-popis p {
+    color: var(--text-on-dark);
+}
+
+.detail-tabs {
+    gap: 0.5rem;
+}
+
+.detail-tabs .nav-link {
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-weight: var(--font-bold);
+}
+
+.detail-tabs .nav-link.active {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: var(--text-on-accent);
+}
+
+.detail-overview-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+}
+
+.detail-overview-card {
+    padding: 1rem;
+    border: 1px solid var(--glass-strong-border);
+    border-radius: var(--radius-lg);
+    background: var(--glass-strong-primary);
+    text-align: center;
+    
+
+}
+
+.detail-overview-card span {
+    display: block;
+    color: var(--text-primary);
+    font-size: var(--text-base);
+    font-weight: var(--font-normal);
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.detail-overview-card strong {
+    color: var(--text-on-dark);
+    font-size: var(--text-3xl);
+    line-height: var(--leading-tight);
+    text-align: center;
+}
+
+.detail-overview-card.warning strong { color: var(--state-warning-strong); }
+.detail-overview-card.danger strong { color: var(--state-danger-strong); }
+.detail-overview-card.info strong { color: var(--state-info-fg); }
+
+.detail-table-section {
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.vydej-selection-panel {
+    padding: 1rem;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.vydej-selection-panel strong {
+    display: block;
+    color: var(--text-on-dark);
+    font-size: var(--text-lg);
+}
+
+.vydej-selection-panel small {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--text-muted);
+}
+
+.vydej-material-row.is-selected > * {
+    background-color: rgba(99, 102, 241, 0.24);
+    color: var(--text-on-dark);
+}
+
+/* ==========================================================================
+ *  Lékárničky — nové karty (lk-card)
+ * ========================================================================== */
+
+.lk-card {
+    --lk-card-bg: var(--glass-subtle-bg);
+    --lk-card-glow-primary: rgba(255, 255, 255, 0.62);
+    --lk-card-glow-secondary: rgba(255, 255, 255, 0.34);
+    --lk-card-border-ok: rgba(80, 177, 16, 0.85);
+    --lk-card-shadow-ok: rgba(80, 177, 16, 0.20);
+
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    border-radius: var(--radius-2xl);
+    background: 
+        radial-gradient(circle at 35% 35%, var(--lk-card-glow-primary) 0%, transparent 90%),
+        radial-gradient(circle at 75% 75%, var(--lk-card-glow-secondary) 50%, transparent 80%),
+        var(--lk-card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    overflow: hidden;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    position: relative;
+    
+    border: 2px solid var(--lk-card-border-ok);
+    box-shadow: 0 8px 32px 0 var(--lk-card-shadow-ok);
+    z-index: 1;
+}
+
+body.dark-mode .lk-card,
+[data-bs-theme="dark"] .lk-card {
+    --lk-card-bg: rgba(15, 23, 42, 0.74);
+    --lk-card-glow-primary: rgba(148, 163, 184, 0.08);
+    --lk-card-glow-secondary: rgba(129, 140, 248, 0.05);
+    --lk-card-border-ok: rgba(34, 197, 94, 0.55);
+    --lk-card-shadow-ok: rgba(0, 0, 0, 0.35);
+}
+
+.lk-card:hover {
+    box-shadow: 0 15px 45px 0 rgba(0, 0, 0, 0.15);
+    transform: translateY(-6px);
+}
+
+/* VAŠE GRADIENT BARVA - ATTENTION STAV */
+.lk-card-attention {
+    border: 3px solid transparent;
+    background-image: 
+        radial-gradient(circle at 35% 35%, var(--lk-card-glow-primary) 0%, transparent 90%),
+        radial-gradient(circle at 75% 75%, var(--lk-card-glow-secondary) 50%, transparent 80%),
+        linear-gradient(var(--lk-card-bg), var(--lk-card-bg)),
+        linear-gradient(90deg, var(--state-warning-strong), var(--state-danger-fg));
+    background-origin: border-box;
+    background-clip: padding-box, padding-box, padding-box, border-box;
+    
+    box-shadow: 0 10px 40px rgba(245, 158, 11, 0.35);
+}
+
+.lk-card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 1.25rem;
+}
+
+/* Hlavička karty */
+.lk-card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.lk-card-icon {
+    flex-shrink: 1;
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 100%;
+    border: 1px solid darkslategrey;
+    background: var(--glass-strong-primary);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter : blur(16px);
+    color: var(--accent-secondary);
+    display: grid;
+    place-items: center;
+    font-size: 1.4rem;
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+.lk-card-attention .lk-card-icon {
+    background: var(--state-warning-bg);
+    color: var(--state-warning-fg);
+}
+
+.lk-card-identity {
+    flex: 1;
+    margin-top: 0.2rem;
+    margin-left: 0.6rem;
+    min-width: 0;
+}
+
+.lk-card-identity h6 {
+    margin: 0 0 0.3rem;
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.lk-card-identity span {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+}
+
+/* Meta řádek */
+.lk-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+}
+
+.lk-card-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+}
+
+.lk-card-meta span i {
+    width: 1rem;
+    text-align: center;
+    opacity: 0.9;
+}
+
+.lk-meta-warn {
+    color: var(--state-danger-fg) !important;
+    font-weight: var(--font-semibold);
+}
+
+/* Alert pilulky */
+.lk-alert-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.lk-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    border: 1px solid transparent;
+    line-height: 1.4;
+}
+
+.lk-pill i { font-size: 0.7rem; }
+
+.lk-pill-ok {
+    background: var(--state-success-bg);
+    color: var(--state-success-fg);
+    border-color: var(--state-success-border, transparent);
+}
+
+.lk-pill-warning {
+    background: var(--state-warning-bg);
+    color: var(--state-warning-fg);
+    border-color: var(--state-warning-border);
+}
+
+.lk-pill-danger {
+    background: var(--state-danger-bg);
+    color: var(--state-danger-fg);
+    border-color: var(--state-danger-border);
+}
+
+.lk-pill-info {
+    background: var(--state-info-bg);
+    color: var(--state-info-fg);
+    border-color: var(--state-info-border, transparent);
+}
+
+/* Metriky */
+.lk-card-metrics {
+    display: grid;
+    border-radius: var(--radius-xl);
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin-top: auto;
+}
+
+.lk-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: clamp(65px, 6vw, 85px);
+    height: clamp(65px, 6vw, 85px);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all var(--transition-bouncy);
+    
+    /* Skleněný efekt */
+    background: 
+        radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.4) 0%, transparent 45%),
+        radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.15) 0%, transparent 45%),
+        var(--glass-subtle-bg);
+    
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1.5px solid var(--glass-strong-border);
+    box-shadow: inset 0 0 10px rgba(255, 255, 255, 0.2);
+    gap: 2px;
+}
+
+.lk-metric:hover {
+    transform: scale(1.1);
+    box-shadow: 0 0 15px var(--glow-color, rgba(255, 255, 255, 0.2));
+}
+
+/* Barevné varianty */
+.lk-metric {
+    --glow-color: rgba(34, 197, 94, 0.3);
+    border-color: rgba(34, 197, 94, 0.4);
+}
+
+.lk-metric-warn {
+    --glow-color: rgba(245, 158, 11, 0.4);
+    border-color: rgba(245, 158, 11, 0.5);
+}
+
+.lk-metric-danger {
+    --glow-color: rgba(239, 68, 68, 0.4);
+    border-color: rgba(239, 68, 68, 0.5);
+}
+
+.lk-metric-info {
+    --glow-color: rgba(52, 152, 219, 0.4);
+    border-color: rgba(52, 152, 219, 0.5);
+}
+
+.lk-metric span {
+    display: flex;
+    font-size: 0.55rem;
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    color: var(--text-muted);
+    letter-spacing: 0.01em;
+}
+
+.lk-metric strong {
+    display: flex;
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    line-height: 1;
+}
+
+.lk-metric strong {
+    display: flex;
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+
+.lk-metric-warn strong { color: var(--state-warning-strong); }
+.lk-metric-danger strong { color: var(--state-danger-fg); }
+
+/* Footer s tlačítky */
+.lk-card-footer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: linear-gradient(to bottom, rgba(242, 238, 238, 0.4), rgba(61, 59, 59, 0.258));
+}
+
+.lk-card-footer .btn {
+    flex: 4 4 auto;
+    border-radius: var(--radius-xl);
+    min-width: 0;
+    white-space: nowrap;
+    font-size: var(--text-sm);
+}
+
+/* ==========================================================================
+ *  Lékárničky — vylepšený status strip
+ * ========================================================================== */
+
+.lk-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.6rem;
+}
+
+.lk-stat {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--glass-subtle-border);
+    border-radius: var(--radius-lg);
+    background: var(--glass-subtle-bg);
+}
+
+.lk-stat-icon {
+    width: 5rem;
+    height: 5rem;
+    border-radius: var(--radius-2xl);
+    display: grid;
+    place-items: center;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+}
+
+.lk-stat-icon.primary  { background: var(--accent-primary-soft);     color: var(--accent-primary); }
+.lk-stat-icon.success  { background: var(--state-success-bg);         color: var(--state-success-fg); }
+.lk-stat-icon.warning  { background: var(--state-warning-bg);         color: var(--state-warning-fg); }
+.lk-stat-icon.danger   { background: var(--state-danger-bg);          color: var(--state-danger-fg); }
+.lk-stat-icon.info     { background: var(--state-info-bg);            color: var(--state-info-fg); }
+.lk-stat-icon.muted    { background: var(--surface-sunken);           color: var(--text-muted); }
+
+.lk-stat-body span {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+}
+
+.lk-stat-body strong {
+    display: block;
+    font-size: var(--text-xl);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    line-height: 1.1;
+}
+
+.table.dataTable > tbody > tr.row-warning > *,
+.table.dataTable > tbody > tr.row-danger > *,
+.glass-modal .table > tbody > tr.row-warning > *,
+.glass-modal .table > tbody > tr.row-danger > * {
+    background-color: inherit;
+    color: inherit;
+}
+
+.glass-modal .dt-empty {
+    color: var(--text-muted);
+    text-align: center;
+}
+
+@media (max-width: 1199.98px) {
+    .lekarnicky-stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .detail-lekarnicky-summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 991.98px) {
+    .lekarnicky-hero,
+    .lekarnicky-hero-actions,
+    .lekarnicky-view-tools,
+    .lekarnicky-admin-strip {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .detail-overview-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .lekarnicky-module-toolbar {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .lekarnicky-view-tools,
+    .lekarnicky-view-tools .input-group,
+    .lekarnicky-view-tools .form-select {
+        min-width: 100%;
+        max-width: 100%;
+    }
+
+    .lekarnicky-card-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 767.98px) {
+    .lekarnicky-hero h1 {
+        font-size: var(--text-3xl);
+    }
+
+    .lekarnicky-stats-grid,
+    .detail-lekarnicky-summary,
+    .lekarnicky-card-metrics,
+    .detail-overview-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .lekarnicky-status-strip span,
+    .lekarnicky-card-actions {
+        width: 100%;
+    }
+}
+
+
+/* ==========================================================================
+ *  11) Plán budovy
  *  Půdorys budovy s puntíky lékárniček. Použijeme state tokeny pro barvy.
  * ========================================================================== */
 
@@ -597,7 +1603,402 @@ form#objednavka-form {
         box-shadow var(--transition-base);
 }
 
-.nadpis-new-oopp h1 {
-    color: var(--text-primary);
-    font-size: var(--text-4xl);
+
+
+/* ==========================================================================
+ *  14) Lékárničky — Modern Dashboard Enhancements
+ * ========================================================================== */
+
+.lekarnicky-hero-section {
+    position: relative;
+    padding: 1.35rem 1.5rem;
+    margin-top: 2rem;
+    margin-bottom: 2.5rem;
+    border-radius: var(--radius-2xl);
+    background:
+        radial-gradient(circle at 8% 18%, rgba(255, 255, 255, 0.42) 0, transparent 34%),
+        radial-gradient(circle at 92% 12%, rgba(99, 102, 241, 0.12) 0, transparent 36%),
+        var(--glass-subtle-bg);
+    border: 1px solid var(--glass-subtle-border);
+    overflow: hidden;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: var(--glass-subtle-shadow);
 }
+
+body.dark-mode .lekarnicky-hero-section,
+[data-bs-theme="dark"] .lekarnicky-hero-section {
+    background:
+        radial-gradient(circle at 8% 18%, rgba(148, 163, 184, 0.10) 0, transparent 34%),
+        radial-gradient(circle at 92% 12%, rgba(129, 140, 248, 0.08) 0, transparent 36%),
+        rgba(15, 23, 42, 0.58);
+}
+
+.lekarnicky-hero-content {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+}
+
+.lekarnicky-hero-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.45rem;
+    color: var(--accent-primary);
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+}
+
+.lekarnicky-hero-kicker i {
+    font-size: 0.95rem;
+}
+
+.lekarnicky-hero-title {
+    font-size: clamp(1.75rem, 3vw, 2.75rem);
+    font-weight: var(--font-bold);
+    color: var(--text-primary);
+    line-height: 1.1;
+    overflow-wrap: anywhere;
+}
+
+.lekarnicky-hero-title span {
+    color: var(--accent-primary);
+}
+
+.lekarnicky-hero-subtitle {
+    margin-top: 0.45rem;
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    max-width: 34rem;
+    line-height: var(--leading-normal);
+}
+
+.lekarnicky-stats-modern {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 3rem;
+}
+
+.stat-card-premium {
+    padding: 1.5rem;
+    border-radius: var(--radius-xl);
+    background: var(--glass-subtle-bg);
+    border: 1px solid var(--glass-subtle-border);
+    transition: all var(--transition-bouncy);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.stat-card-premium:hover {
+    transform: translateY(-5px);
+    border-color: var(--accent-primary-soft);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card-premium .icon-box {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    background: var(--surface-sunken);
+    margin-bottom: 0.25rem;
+}
+
+.stat-card-premium.primary .icon-box { color: var(--accent-primary); background: var(--accent-primary-soft); }
+.stat-card-premium.success .icon-box { color: var(--state-success-fg); background: var(--state-success-bg); }
+.stat-card-premium.warning .icon-box { color: var(--state-warning-fg); background: var(--state-warning-bg); }
+.stat-card-premium.danger .icon-box { color: var(--state-danger-fg); background: var(--state-danger-bg); }
+.stat-card-premium.info .icon-box { color: var(--state-info-fg); background: var(--state-info-bg); }
+.stat-card-premium.secondary .icon-box { color: var(--text-secondary); background: var(--surface-sunken); }
+
+.stat-card-premium .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--text-primary);
+}
+
+.stat-card-premium .stat-label {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+
+.navigation-card-premium {
+    flex: 1;
+    margin: 3rem;
+    min-width: 250px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    padding: 2rem 1rem 2rem 1rem;
+    border-radius: var(--radius-2xl);
+    background: var(--glass-subtle-bg);
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+    border: 1.8px solid var(--glass-subtle-border);
+    transition: all var(--transition-bouncy);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-decoration: none !important;
+    z-index: 1;
+}
+
+.navigation-card-premium::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+        to right,
+        transparent,
+        rgba(255, 255, 255, 0.50),
+        transparent
+    );
+    transform: skewX(-25deg);
+    transition: left 0.9s ease-in-out;
+    z-index: 2;
+    pointer-events: none;
+}
+
+.navigation-card-premium:hover::before {
+    opacity: 1;
+}
+
+.navigation-card-premium:hover::after {
+    left: 150%;
+}
+
+.navigation-card-premium:hover {
+    transform: translateY(-5px); 
+}
+
+.navigation-card-premium i {
+    font-size: 3rem;
+    color: var(--accent-secondary);
+    margin-bottom: 1.5rem;
+    transition: transform var(--transition-bouncy);
+}
+
+.navigation-card-premium:hover i {
+    transform: scale(1.4) rotate(7deg);
+}
+
+.navigation-card-premium h4 {
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+    color: var(--text-primary);
+}
+
+.navigation-card-premium p {
+    color: var(--text-muted);
+    font-size: var(--text-sm);
+    margin-bottom: 0;
+}
+
+@keyframes shine {
+    from { opacity: 0; transform: scale(0.5); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.lekarnicky-loading {
+    --lk-loading-bg: var(--glass-subtle-bg);
+    --lk-loading-glow-primary: rgba(255, 255, 255, 0.38);
+    --lk-loading-glow-secondary: rgba(99, 102, 241, 0.10);
+    --lk-loading-block: rgba(255, 255, 255, 0.46);
+    --lk-loading-shine: rgba(255, 255, 255, 0.78);
+}
+
+body.dark-mode .lekarnicky-loading,
+[data-bs-theme="dark"] .lekarnicky-loading {
+    --lk-loading-bg: rgba(15, 23, 42, 0.64);
+    --lk-loading-glow-primary: rgba(148, 163, 184, 0.08);
+    --lk-loading-glow-secondary: rgba(129, 140, 248, 0.06);
+    --lk-loading-block: rgba(255, 255, 255, 0.055);
+    --lk-loading-shine: rgba(255, 255, 255, 0.12);
+}
+
+.lk-loading-card {
+    min-height: 15.5rem;
+    padding: 1.25rem;
+    border-radius: var(--radius-2xl);
+    background:
+        radial-gradient(circle at 35% 28%, var(--lk-loading-glow-primary) 0, transparent 68%),
+        radial-gradient(circle at 82% 78%, var(--lk-loading-glow-secondary) 0, transparent 55%),
+        var(--lk-loading-bg);
+    border: 1px solid var(--glass-subtle-border);
+    box-shadow: var(--glass-subtle-shadow);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+    overflow: hidden;
+}
+
+.lk-loading-header {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+}
+
+.lk-loading-icon {
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: var(--radius-full);
+    flex: 0 0 auto;
+}
+
+.lk-loading-title,
+.lk-loading-meta {
+    flex: 1;
+    display: grid;
+    gap: 0.55rem;
+    min-width: 0;
+}
+
+.lk-loading-line {
+    width: 100%;
+    height: 0.8rem;
+    border-radius: var(--radius-full);
+}
+
+.lk-loading-line.short {
+    width: 46%;
+}
+
+.lk-loading-line.medium {
+    width: 72%;
+}
+
+.lk-loading-metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.65rem;
+    margin-top: auto;
+}
+
+.lk-loading-dot {
+    width: clamp(3.3rem, 7vw, 4.25rem);
+    aspect-ratio: 1;
+    border-radius: var(--radius-full);
+    justify-self: center;
+}
+
+.loading-skeleton-pulse {
+    position: relative;
+    overflow: hidden;
+    background: var(--lk-loading-block);
+}
+
+.loading-skeleton-pulse::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, var(--lk-loading-shine), transparent);
+    animation: skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes skeleton-pulse {
+    100% { transform: translateX(100%); }
+}
+
+/* ========================================================================== 
+ *  15) Card Utilities 
+ * ========================================================================== */
+
+.glass-card {
+    background: var(--glass-subtle-bg);
+    backdrop-filter: var(--glass-subtle-blur);
+    -webkit-backdrop-filter: var(--glass-subtle-blur);
+    border: 1px solid var(--glass-subtle-border);
+    transition: all var(--transition-base);
+}
+
+.badge-premium {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    border: 1px solid transparent;
+}
+
+.badge-premium.ok { background: var(--state-success-bg); color: var(--state-success-fg); border-color: var(--state-success-border); }
+.badge-premium.warning { background: var(--state-warning-bg); color: var(--state-warning-fg); border-color: var(--state-warning-border); }
+.badge-premium.danger { background: var(--state-danger-bg); color: var(--state-danger-fg); border-color: var(--state-danger-border); }
+.badge-premium.info { background: var(--state-info-bg); color: var(--state-info-fg); border-color: var(--state-info-border); }
+
+.grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+}
+
+.metric-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--surface-sunken);
+    border-radius: var(--radius-lg);
+}
+
+.metric-item .label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+}
+
+.metric-item .value {
+    font-size: 1.25rem;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+/* ========================================================================== 
+ *  16) Kit Card Refinements 
+ * ========================================================================== */
+
+.place-items-center {
+    display: grid !important;
+    place-items: center !important;
+}
+
+.lekarnicky-card .card-body {
+    padding: 0 !important;
+}
+
+.lekarnicky-card .lekarnicky-card-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: var(--radius-lg);
+    background: var(--accent-primary-soft);
+    color: var(--accent-primary);
+    display: grid;
+    place-items: center;
+    font-size: 1.25rem;
+}
+
+
+/* Typography for small circular stats */

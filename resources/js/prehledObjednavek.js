@@ -8,8 +8,7 @@ let currentRowToUpdate = null;
 let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
 
 
- function prehled() {
-    console.log('prehledObjednavek.js: Modul inicializován.');
+function prehled() {
 
     const ordersList = document.getElementById('orders-list');
     const notificationContainer = document.getElementById('notification-container');
@@ -190,7 +189,7 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
                     }
                     confirmationDiv.remove();
                 })
-                .catch(error => {
+                .catch(() => {
                     showNotification('Chyba při komunikaci se serverem.', 'error');
                     confirmationDiv.remove();
                 });
@@ -299,7 +298,7 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
                                 showNotification(result.error || 'Chyba při objednání.', 'error');
                             }
                         })
-                        .catch(error => {
+                        .catch(() => {
                             showNotification('Chyba při komunikaci se serverem.', 'error');
                         });
                     }
@@ -343,7 +342,7 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
                             currentOrderId = null;
                             currentRowToUpdate = null;
                         })
-                        .catch(error => {
+                        .catch(() => {
                             showNotification('Chyba při komunikaci se serverem.', 'error');
                         });
                     }
@@ -356,5 +355,4 @@ let blankSignatureData = null; // ZDE: Deklarace blankSignatureData
             showNotification('Nepodařilo se načíst objednávky.', 'error');
         });
 }
-document.addEventListener('DOMContentLoaded', prehled);
 export { prehled };

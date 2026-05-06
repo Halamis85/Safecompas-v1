@@ -239,14 +239,9 @@ async function handleFetchResponse(response) {
                         podpisCell.innerHTML = order.podpis_path
                             ? '<img src="/signatures/' + order.podpis_path + '" alt="Podpis" style="max-height: 80px;" loading="lazy">'
                             : '';
-
                     });
-                    console.log("Data vložena do tabulky.");
 
-                    // Inicializuj DataTables na NOVÉ tabulce
-                    // Použijte nový DataTable('#table-prh')
                     new DataTable('#table-prh', {
-                        rowReorder: true, // Oprava typo: rowRecoder -> rowReorder
                         paging: true,
                         searching: true,
                         info: false,
@@ -260,12 +255,8 @@ async function handleFetchResponse(response) {
                         }
                     });
 
-                    console.log("DataTables inicializováno na nové tabulce.");
                 } else {
-                    // Pokud nejsou objednávky, zobraz zprávu přímo v tbody a DataTables neinicializuj
                     orderListBody.innerHTML = '<tr><td colspan="5">Žádné objednávky nebyly nalezeny</td></tr>';
-                    console.log("Žádné objednávky nebyly nalezeny.");
-                    // Tabulka zůstane obyčejná HTML tabulka
                 }
             })
             .catch(error => {
@@ -274,5 +265,4 @@ async function handleFetchResponse(response) {
             });
     }
 }
-document.addEventListener('DOMContentLoaded', cardEmploee);
 export { cardEmploee };

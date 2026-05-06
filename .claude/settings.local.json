@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run *)",
+      "Bash(php artisan tinker '--execute= *)",
+      "Bash(php artisan *)",
+      "Bash(xargs grep *)",
+      "Bash(dir \"c:\\\\Safecompas\\\\resources\\\\views\\\\vendor\" /s /b)"
+    ]
+  }
+}

@@ -27,14 +27,10 @@ class SecurityHeaders
         $hotFile      = public_path('hot');
         $viteRunning  = app()->environment('local') && is_file($hotFile);
 
-        // POZOR: IPv6 literály v hranatých závorkách (`[::1]`) Chrome v CSP
-        // source listu odmítá jako neplatné. Nutné je tedy povolit jen
-        // `127.0.0.1` a `localhost`, což pokrývá veškeré praktické scénáře
-        // dev běhu. Pokud bys přesto chtěl IPv6, musel by ses spolehnout
-        // na hostitelské jméno (`ip6-localhost`), ale to nepřináší žádnou
-        // výhodu nad `localhost`, který je už zde.
-        $viteServer = $viteRunning ? 'http://127.0.0.1:5173 http://localhost:5173' : '';
-        $viteWs     = $viteRunning ? 'ws://127.0.0.1:5173 ws://localhost:5173'   : '';
+        // Vite se na Windows/localhost může občas přihlásit přes IPv6 `[::1]`.
+        // Povolujeme všechny lokální varianty, ale jen když existuje public/hot.
+        $viteServer = $viteRunning ? 'http://127.0.0.1:5173 http://localhost:5173 http://[::1]:5173' : '';
+        $viteWs     = $viteRunning ? 'ws://127.0.0.1:5173 ws://localhost:5173 ws://[::1]:5173'   : '';
 
         // Nonce vezmeme z singletonu - pokud žádný Blade @vite ho ještě
         // nepoužil, $this->nonce->get() ho teď vyrobí. Pro neutrální
@@ -54,8 +50,11 @@ class SecurityHeaders
         $styleSrc = trim("'self' 'unsafe-inline' {$viteServer}");
 
         $connectSrc = trim(
-            "'self' https://api.openweathermap.org https://date.nager.at {$viteWs}"
+            "'self' https://api.openweathermap.org https://date.nager.at {$viteServer} {$viteWs}"
         );
+
+        $imgSrc  = trim("'self' data: blob: https: {$viteServer}");
+        $fontSrc = trim("'self' data: {$viteServer}");
 
         $csp = implode('; ', [
             "default-src 'self'",
@@ -63,8 +62,8 @@ class SecurityHeaders
             "script-src-elem {$scriptSrc}",
             "style-src {$styleSrc}",
             "style-src-elem {$styleSrc}",
-            "img-src 'self' data: blob: https:",
-            "font-src 'self' data:",
+            "img-src {$imgSrc}",
+            "font-src {$fontSrc}",
             "connect-src {$connectSrc}",
             "frame-ancestors 'self'",
             "base-uri 'self'",

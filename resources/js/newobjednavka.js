@@ -46,6 +46,19 @@ function resetCardCircleContent() {
     lastInfo = document.getElementById('last-info');
 
 }
+function formatDateCZ(dateValue) {
+    if (!dateValue) return 'Nevydáno';
+
+    const date = new Date(dateValue);
+    if (Number.isNaN(date.getTime())) return dateValue;
+
+    return date.toLocaleDateString('cs-CZ', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+    });
+}
+
 
 // Funkce pro zobrazení zprávy (success/error/info) v card-circle
 function displayCardMessage(iconClass, iconWeight, textColorClass, messageTitle, messageDetail, type = 'success') {
@@ -102,12 +115,10 @@ function displayCardMessage(iconClass, iconWeight, textColorClass, messageTitle,
 
 
 function objednavka() {
-    console.log('script_objednávka.js: Modul inicializován.');
-
     if (!csrfToken) {
         console.error('CSRF token nebyl nalezen!');
         alert('Chyba: Chybí bezpečnostní token');
-        return; // ✅ Nyní je return uvnitř funkce
+        return;
     }
 
     // Inicializace
@@ -376,7 +387,7 @@ function objednavka() {
                         <div class="last-info-1 text ">Poslední vydaná velikost:
                         <span class="fw-bold">${lastReceivedData.velikost } </span></div>
                         <div class="last-info">Datum vydání:
-                        <span class="fw-bold">${lastReceivedData.datum_vydani || 'Nevydáno'}</span></div>
+                        <span class="fw-bold">${formatDateCZ(lastReceivedData.datum_vydani)}</span></div>
                     `;
                 } else {
                     lastInfo.textContent = data.message || 'Žádný výdej nenalezen.';
@@ -415,7 +426,7 @@ function objednavka() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken.getAttribute('content'), // <-- PŘIDEJ TOHLE
+                'X-CSRF-TOKEN': csrfToken.getAttribute('content'),
                 'Accept': 'application/json'
             },
             body: JSON.stringify(data)
@@ -445,5 +456,4 @@ function objednavka() {
             });
     });
     }
-    document.addEventListener('DOMContentLoaded', objednavka);
-    export { objednavka };
+export { objednavka };

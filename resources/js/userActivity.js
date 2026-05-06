@@ -4,7 +4,6 @@ import DataTable from 'datatables.net-dt';
 let activitiesDataTable;
 
 export function userActivity() {
-    console.log('userActivity.js: Script pro aktivity uživatelů inicializován.');
 
     const activitiesTable = document.getElementById('activitiesTable');
     const csrfToken = document.querySelector('meta[name="csrf-token"]');
@@ -105,6 +104,5 @@ export function userActivity() {
                 url: '/assets/cs.json'
             }
         });
-        console.log('userActivity.js: DataTables inicializováno.');
     }
 }

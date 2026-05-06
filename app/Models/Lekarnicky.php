@@ -41,6 +41,11 @@ class Lekarnicky extends Model
         return $this->hasMany(Uraz::class, 'lekarnicky_id');
     }
 
+    public function materialObjednavky()
+    {
+        return $this->hasMany(LekarnickyMaterialObjednavka::class, 'lekarnicky_id');
+    }
+
     public function getExpirujiciMaterialAttribute()
     {
         return $this->material()

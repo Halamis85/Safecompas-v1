@@ -3,8 +3,7 @@ import DataTable from 'datatables.net-dt';
 
 let contactsDataTable = null;
 
-export function emailContact() {
-    console.log('emailContact.js: Inicializováno');
+export function emailContact() {;
 
     const csrfMeta = document.querySelector('meta[name="csrf-token"]');
     const contactsTable = document.getElementById('contacts-table');

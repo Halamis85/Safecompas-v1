@@ -110,17 +110,18 @@
  * ========================================================================== */
 
 .glass-modal {
-    background: var(--glass-modal-bg);
-    backdrop-filter: var(--glass-modal-blur) saturate(180%);
-    -webkit-backdrop-filter: var(--glass-modal-blur) saturate(180%);
-    border: 1px solid var(--glass-modal-border);
+    background: var(--surface-overlay) !important;
+    backdrop-filter: var(--glass-strong-blur) !important;
+    -webkit-backdrop-filter: var(--glass-strong-blur) !important;
+    border: 1px solid var(--glass-strong-border) !important;
     border-radius: var(--radius-xl);
-    box-shadow: var(--glass-modal-shadow);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
 
-    /* Lokální token override — vše uvnitř automaticky vidí "tmavý kontext" */
-    --text-primary:   var(--text-on-dark);
-    --text-secondary: var(--palette-slate-300);
-    --text-muted:     var(--palette-slate-400);
+    /* Lokální token override — vše uvnitř bude perfektně čitelné na tmavém pozadí */
+    --text-primary:   #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.85);
+    --text-muted:     rgba(255, 255, 255, 0.60);
+    --text-link:      var(--accent-primary);
     --border-default: rgba(255, 255, 255, 0.10);
     --border-strong:  rgba(255, 255, 255, 0.20);
     --surface-sunken: rgba(255, 255, 255, 0.04);

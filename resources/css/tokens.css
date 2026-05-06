@@ -1,5 +1,6 @@
 /* ==========================================================================
- *  Safecompas — Design Token System (Restart 1)
+ *  Safecompas — Design Token Sys
+ em (Restart 1)
  *  Verze 2.0
  *
  *  Tento soubor definuje JEN proměnné. Žádné komponenty, žádné selektory
@@ -56,7 +57,7 @@
     --palette-slate-600: #475569;
     --palette-slate-700: #334155;
     --palette-slate-800: #1e293b;
-    --palette-slate-900: #0f172a;
+    --palette-slate-900: #000000;
 
     /* Stavové barvy */
     --palette-success-500: #22c55e;
@@ -67,16 +68,25 @@
     --palette-danger-600:  #dc2626;
     --palette-info-500:    #06b6d4;
 
+    /*Pro ikonky dark mode*/
+   --palette-icon-dark-color: #bd3737f8;
+   --palette-icon-dark-color-hover: #f6340da1;
+
+     /*Pro ikonky light mode*/
+   --palette-icon-light-color: #33343a;
+   --palette-icon-light-color-hover: #2e2e4e;
 
     /* ──────────────────────────────────────────────────────────────────
        2) BRAND — akcentová barva
        ────────────────────────────────────────────────────────────────── */
 
     --accent-primary:        var(--palette-indigo-500);
+    --accent-secondary:      var(--palette-icon-light-color);
+    --accent-secondary-hover: var(--palette-icon-light-color-hover);
     --accent-primary-hover:  var(--palette-indigo-600);
     --accent-primary-active: var(--palette-indigo-700);
-    --accent-primary-soft:   rgba(99, 102, 241, 0.15);
-    --accent-primary-glow:   rgba(99, 102, 241, 0.30);
+    --accent-primary-soft:   rgba(255, 255, 255, 0.471);
+    --accent-primary-glow:   rgba(254, 0, 0, 0.3);
     --accent-on-primary:     #ffffff; /* text na akcentovém pozadí */
 
 
@@ -86,7 +96,7 @@
        světlejší (dark mode) má pozadí.
        ────────────────────────────────────────────────────────────────── */
 
-    --surface-page:    #7272be;                    /* tělo stránky (zachováváme dosavadní fialovo-modrou) */
+    --surface-page:    #f11616;                    /* tělo stránky (zachováváme dosavadní fialovo-modrou) */
     --surface-raised:  rgba(255, 255, 255, 0.55);   /* karty, panely */
     --surface-overlay: rgba(255, 255, 255, 0.58);   /* modaly, dropdowns */
     --surface-sunken:  rgba(255, 255, 255, 0.30);   /* input pozadí, table stripe */
@@ -97,10 +107,10 @@
        4) TEXT — sémantické úrovně
        ────────────────────────────────────────────────────────────────── */
 
-    --text-primary:    var(--palette-slate-800);
-    --text-secondary:  var(--palette-slate-700);
-    --text-muted:      var(--palette-slate-500);
-    --text-disabled:   var(--palette-slate-400);
+    --text-primary:    var(--palette-slate-900);
+    --text-secondary:  var(--palette-slate-800);
+    --text-muted:      var(--palette-slate-700);
+    --text-disabled:   var(--palette-slate-500);
     --text-link:       var(--accent-primary);
     --text-on-accent:  var(--accent-on-primary);
     --text-on-dark:    var(--palette-slate-100);    /* uvnitř dark glass modalů */
@@ -111,7 +121,7 @@
        ────────────────────────────────────────────────────────────────── */
 
     --border-subtle:  rgba(255, 255, 255, 0.20);
-    --border-default: rgba(255, 255, 255, 0.30);
+    --border-default: rgba(255, 255, 255, 0.30);                                                                                                                                                                                                                                                        
     --border-strong:  rgba(0, 0, 0, 0.10);
     --border-focus:   var(--accent-primary);
 
@@ -148,14 +158,17 @@
 
     /* Strong — karty, modal content, hlavní panel */
     --glass-strong-bg:     rgba(255, 255, 255, 0.55);
+    --glass-strong-primary: rgba(255, 255, 255, 0.25);
     --glass-strong-blur:   blur(16px);
     --glass-strong-border: rgba(255, 255, 255, 0.40);
     --glass-strong-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.10);
 
     /* Subtle — pozadí kontejnerů, list groupy, mírné podsvícení */
-    --glass-subtle-bg:     rgba(255, 255, 255, 0.25);
+    --glass-subtle-bg:     rgba(255, 255, 255, 0.40);
     --glass-subtle-blur:   blur(6px);
     --glass-subtle-border: rgba(255, 255, 255, 0.20);
+    --glass-glass-border:rgba(61, 61, 61, 0.40);
+    --glass-glass-border-blur: blur(6px);
     --glass-subtle-shadow: 0 4px 12px 0 rgba(31, 38, 135, 0.06);
 
     /* Modal — vždy tmavý glass i v light módu (vyšší kontrast pro focus) */
@@ -341,6 +354,8 @@ body.dark-mode {
 
     /* Brand — světlejší indigo na tmavém pozadí (lepší kontrast) */
     --accent-primary:        var(--palette-indigo-400);       /* #818cf8 */
+    --accent-secondary:      var(--palette-icon-dark-color);
+    --accent-secondary-hover: var(--palette-icon-dark-color-hover);
     --accent-primary-hover:  var(--palette-indigo-300);
     --accent-primary-active: var(--palette-indigo-200);
     --accent-primary-soft:   rgba(129, 140, 248, 0.20);
@@ -384,7 +399,7 @@ body.dark-mode {
        (Původní cesta /public/images/... v produkci 404uje, protože
        Laravel public je document root.)
        ──────────────────────────────────────────────────────────── */
-    background-image: url("/images/black.back.webp");
+    background-image: url("/Public/images/black.back.webp");
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-size: cover;
@@ -449,6 +464,11 @@ body.dark-mode {
  *  Tu necháme, ale fallback systém nikdy do Inter nespadne. Až ověříš,
  *  že to vypadá dobře, můžeš @font-face úplně smazat (úspora ~30 KB).
  * ========================================================================== */
+
+.gap-6{
+   gap: 5rem !important;
+}
+
 
 body {
     font-family: var(--font-sans);

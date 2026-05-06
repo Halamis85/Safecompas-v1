@@ -81,7 +81,7 @@ class ObjednavkyController extends Controller
             $recipients = User::select('id', 'email', 'firstname', 'lastname')
                 ->where('is_active', true)
                 ->whereHas('roles', function ($q) {
-                    $q->whereIn('name', ['super_admin', 'admin', 'oopp.edit']);
+                    $q->where('notify_oopp_order', true);
                 })
                 ->get();
 

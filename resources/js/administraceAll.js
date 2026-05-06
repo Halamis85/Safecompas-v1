@@ -172,16 +172,12 @@ function administraceAll() {
                             : `<button class="delete-user" disabled title="${escapeHtml(deleteCheck.reason)}" style="opacity: 0.5; cursor: not-allowed;">Odebrat</button>`;
 
                         // Označení vlastního řádku jemnou indikací
-                        const rowStyle = (currentUserId !== null && user.id === currentUserId)
-                            ? 'style="background-color: rgba(76, 175, 80, 0.08);"'
-                            : '';
-                        const youBadge = (currentUserId !== null && user.id === currentUserId)
-                            ? ' <small class="text-success">(vy)</small>'
-                            : '';
+                        const isCurrentUser = currentUserId !== null && user.id === currentUserId;
+                        const youBadge = isCurrentUser ? ' <small class="text-success">(vy)</small>' : '';
 
                         const tr = document.createElement('tr');
                         tr.setAttribute('data-user-id', user.id);
-                        if (rowStyle) tr.setAttribute('style', rowStyle.replace('style="', '').replace('"', ''));
+                        if (isCurrentUser) tr.style.backgroundColor = 'rgba(76, 175, 80, 0.08)';
 
                         tr.innerHTML = `
                             <td>${escapeHtml(user.username)}${youBadge}</td>
@@ -312,5 +308,4 @@ function administraceAll() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', administraceAll);
 export { administraceAll };

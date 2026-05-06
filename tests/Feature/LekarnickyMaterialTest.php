@@ -5,6 +5,7 @@ namespace Tests\Feature;
 
 use App\Models\Lekarnicky;
 use App\Models\LekarnickeMaterial;
+use App\Models\LekarnickyMaterialObjednavka;
 use App\Models\Uraz;
 use App\Models\User;
 use App\Models\VydejMaterialu;
@@ -114,6 +115,69 @@ class LekarnickyMaterialTest extends TestCase
             'material_id'     => $material->id,
             'vydane_mnozstvi' => 5,
         ]);
+    }
+
+    public function test_responsible_user_sees_only_assigned_lekarnicky(): void
+    {
+        $other = Lekarnicky::create([
+            'nazev'    => 'Vedlejší lékárnička',
+            'umisteni' => 'Sklad',
+            'zodpovedna_osoba' => 'Někdo jiný',
+            'status'   => 'aktivni',
+        ]);
+
+        $user = User::factory()->withRole('lekarnicky_user')->create();
+        $user->lekarnickAccess()->attach($this->lekarnicka->id, ['access_level' => 'admin']);
+        $this->actingAsSession($user);
+
+        $response = $this->getJson('/api/lekarnicke/dashboard');
+
+        $response->assertOk();
+        $ids = collect($response->json('lekarnicke'))->pluck('id');
+
+        $this->assertTrue($ids->contains($this->lekarnicka->id));
+        $this->assertFalse($ids->contains($other->id));
+    }
+
+    public function test_vydej_can_create_order_and_doplnit_closes_it(): void
+    {
+        $material = LekarnickeMaterial::create([
+            'lekarnicky_id'   => $this->lekarnicka->id,
+            'nazev_materialu' => 'Sterilní obvaz',
+            'typ_materialu'   => 'obvaz',
+            'aktualni_pocet'  => 20,
+            'minimalni_pocet' => 5,
+            'maximalni_pocet' => 50,
+            'jednotka'        => 'ks',
+        ]);
+
+        $user = User::factory()->withRole('lekarnicky_user')->create();
+        $user->lekarnickAccess()->attach($this->lekarnicka->id, ['access_level' => 'admin']);
+        $this->actingAsSession($user);
+
+        $this->postJson('/api/lekarnicke/vydej', [
+            'material_id' => $material->id,
+            'vydane_mnozstvi' => 4,
+            'objednat_po_vydeji' => true,
+        ])->assertOk()->assertJson(['success' => true]);
+
+        $objednavka = LekarnickyMaterialObjednavka::where('material_id', $material->id)->firstOrFail();
+        $this->assertSame(16, $material->fresh()->aktualni_pocet);
+        $this->assertSame(4, $objednavka->mnozstvi);
+        $this->assertSame('cekajici', $objednavka->status);
+
+        $this->actingAsSession($this->admin);
+        $this->patchJson("/api/lekarnicke/objednavky-materialu/{$objednavka->id}/status", [
+            'status' => 'vydano',
+        ])->assertOk();
+
+        $this->actingAsSession($user);
+        $this->postJson("/api/lekarnicke/material/{$material->id}/doplnit", [
+            'objednavka_id' => $objednavka->id,
+        ])->assertOk()->assertJson(['success' => true]);
+
+        $this->assertSame(20, $material->fresh()->aktualni_pocet);
+        $this->assertSame('doplneno', $objednavka->fresh()->status);
     }
 
     public function test_vydej_rejects_when_insufficient_stock(): void

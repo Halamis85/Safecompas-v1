@@ -46,7 +46,16 @@ export default defineConfig({
         chunkSizeWarningLimit: 800,
     },
 
+    server: {
+        host: '127.0.0.1',
+        port: 5173,
+        hmr: {
+            host: '127.0.0.1',
+            protocol: 'ws',
+        },
+    },
+
     optimizeDeps: {
-        include: ['bootstrap', 'chart.js/auto', 'datatables.net-dt'],
+        include: ['bootstrap', 'chart.js/auto', 'datatables.net-dt', 'resources/js/app.js', 'resources/css/app.css' ],
     },
 });

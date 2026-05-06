@@ -2,12 +2,7 @@ import Chart from 'chart.js/auto';
 
 
 function statik() {
-
-
-    console.log('statistika');
-
     const ctx1 = document.getElementById('statistikaGraf')?.getContext('2d');
-    console.log('statistika');
     const ctx2 = document.getElementById('grafVydaje')?.getContext('2d');
     const aktualniRok = new Date().getFullYear();
 
@@ -190,5 +185,4 @@ function statik() {
             .catch(error => console.error('Chyba při načítání výdajů:', error));
     }
 }
-document.addEventListener('DOMContentLoaded', statik);
 export { statik };

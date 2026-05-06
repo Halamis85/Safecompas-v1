@@ -106,12 +106,23 @@ Route::middleware(['custom.auth'])->group(function () {
     */
     Route::middleware(['permission:lekarnicke.view'])->group(function () {
         Route::get('/lekarnicke', [LekarnickController::class, 'index'])->name('lekarnicke.index');
+        Route::get('/lekarnicke/administrace', [LekarnickController::class, 'admin'])->name('lekarnicke.admin');
     });
 
     // API – view operace
     Route::middleware(['permission:lekarnicke.view'])->prefix('api/lekarnicke')->group(function () {
         Route::get('/dashboard',         [LekarnickController::class, 'dashboard']);
         Route::get('/stats',             [LekarnickController::class, 'stats']);
+        Route::get('/objednavky-materialu', [LekarnickController::class, 'getMaterialObjednavky']);
+        Route::post('/objednavky-materialu', [LekarnickController::class, 'objednatMaterial']);
+        Route::post('/{lekarnicky_id}/objednat-expirujici', [LekarnickController::class, 'objednatExpirujiciMaterial'])
+                ->where('lekarnicky_id', '[0-9]+');
+        Route::post('/material/{material_id}/doplnit', [LekarnickController::class, 'doplnitMaterial'])
+                ->where('material_id', '[0-9]+');
+        Route::patch('/objednavky-materialu/{id}/status', [LekarnickController::class, 'updateMaterialObjednavkaStatus'])
+                ->where('id', '[0-9]+');
+        Route::delete('/objednavky-materialu/{id}', [LekarnickController::class, 'destroyMaterialObjednavka'])
+                ->where('id', '[0-9]+');
         Route::get('/available-owners',  [LekarnickController::class, 'getAvailableOwners']);
         Route::get('/{id}',              [LekarnickController::class, 'show'])
                 ->where('id', '[0-9]+')->middleware(['lekarnick.access:view']);
@@ -140,7 +151,7 @@ Route::middleware(['custom.auth'])->group(function () {
     Route::middleware(['permission:lekarnicke.material'])
         ->prefix('api/lekarnicke')->group(function () {
             Route::post('/{lekarnicky_id}/material', [LekarnickController::class, 'storeMaterial'])
-                ->where('lekarnicky_id', '[0-9]+')->middleware(['lekarnick.access:edit']);
+                ->where('lekarnicky_id', '[0-9]+')->middleware(['lekarnick.access:admin']);
             Route::put('/material/{material_id}',    [LekarnickController::class, 'updateMaterial'])
                 ->where('material_id', '[0-9]+');
             Route::delete('/material/{material_id}', [LekarnickController::class, 'destroyMaterial'])

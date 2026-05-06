@@ -41,6 +41,12 @@
                 <i class="fa-solid fa-eye fa-2x pb-2"></i>Správa oprávnění a přístupů</a>
         </div>
 
+        <div class="col-4 col-sm-12 col-md-8 col-lg-2 d-flex justify-content-center align-items-center mb-4">
+            <a href="{{ route('lekarnicke.admin') }}" class="card-circle-icons animated-circle-icons d-flex flex-column
+                justify-content-center align-items-center text-center text-decoration-none fs-8">
+                <i class="fa-solid fa-kit-medical fa-2x pb-2"></i>Administrace lékárniček</a>
+        </div>
+
     </div>
 </div>
 @endsection

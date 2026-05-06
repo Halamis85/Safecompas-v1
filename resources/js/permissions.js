@@ -1,6 +1,5 @@
 import * as bootstrap from 'bootstrap';
 export function permissions() {
-    console.log('Permissions modul inicializován');
 
     // Globální data
     let appData = {
@@ -143,10 +142,13 @@ export function permissions() {
     function createRoleItem(role) {
         const div = document.createElement('div');
         div.className = 'list-group-item';
+        const notifyBadge = role.notify_oopp_order
+            ? '<span class="badge bg-warning text-dark ms-2" title="Dostává notifikace o objednávkách OOPP"><i class="fa-solid fa-bell fa-xs"></i> OOPP</span>'
+            : '';
         div.innerHTML = `
             <div class="d-flex justify-content-between align-items-center">
                 <div>
-                    <h6 class="mb-1">${role.display_name}</h6>
+                    <h6 class="mb-1">${role.display_name}${notifyBadge}</h6>
                     <p class="mb-1 text-muted">${role.description || 'Bez popisu'}</p>
                     <small>Oprávnění: ${role.permissions ? role.permissions.length : 0}</small>
                 </div>
@@ -225,6 +227,10 @@ export function permissions() {
             });
         }
 
+        // Checkbox notifikace OOPP
+        const notifyCheckbox = document.getElementById('notify-oopp-order');
+        if (notifyCheckbox) notifyCheckbox.checked = !!role.notify_oopp_order;
+
         // Aktualizace titulku
         const title = document.getElementById('role-form-title');
         if (title) {
@@ -245,6 +251,9 @@ export function permissions() {
             checkbox.checked = false;
         });
 
+        const notifyCheckbox = document.getElementById('notify-oopp-order');
+        if (notifyCheckbox) notifyCheckbox.checked = false;
+
         const title = document.getElementById('role-form-title');
         if (title) {
             title.textContent = 'Nová role';
@@ -264,6 +273,9 @@ export function permissions() {
             selectedPermissions.push(parseInt(checkbox.value));
         });
         data.permission_ids = selectedPermissions;
+
+        // Checkbox notifikace — FormData vrátí "on" pokud zaškrtnut, jinak klíč chybí
+        data.notify_oopp_order = document.getElementById('notify-oopp-order')?.checked ? 1 : 0;
 
         try {
             let result;

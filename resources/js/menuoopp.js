@@ -292,5 +292,4 @@
 }
 
 
-document.addEventListener('DOMContentLoaded', menuoopp);
 export { menuoopp };

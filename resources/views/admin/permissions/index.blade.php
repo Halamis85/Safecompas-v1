@@ -59,6 +59,17 @@
                             <!-- Dynamicky generováno -->
                         </div>
 
+                        <h5 class="mt-4">Notifikace</h5>
+                        <div class="border rounded p-3">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="notify-oopp-order">
+                                <label class="form-check-label" for="notify-oopp-order">
+                                    <strong>OOPP — nová objednávka</strong><br>
+                                    <small class="text-muted">Uživatelé s touto rolí dostanou e-mail při každé nové objednávce OOPP.</small>
+                                </label>
+                            </div>
+                        </div>
+
                         <div class="mt-3">
                             <button type="submit" class="btn btn-success">
                                 <i class="fa-solid fa-save me-1"></i> Uložit

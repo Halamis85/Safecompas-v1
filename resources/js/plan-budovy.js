@@ -72,12 +72,9 @@ export function initPlanBudovy({ apiCall, showNotification, getLekarnicky, openD
         marker.addEventListener('click', (e) => {
             if (editing) return;
             e.stopPropagation();
-            if (typeof window.viewLekarnicky === 'function') {
-                // Sklouzneme modal plánu - jinak by se otevřel detail nad ním
-                const modalInstance = bootstrap.Modal.getInstance(modalEl);
-                if (modalInstance) modalInstance.hide();
-                window.viewLekarnicky(lekarnicky.id);
-            }
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            if (modalInstance) modalInstance.hide();
+            openDetailLekarnicky(lekarnicky.id);
         });
 
         // Drag start (jen v editing)

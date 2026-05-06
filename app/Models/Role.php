@@ -15,10 +15,12 @@ class Role extends Model
         'display_name',
         'description',
         'is_active',
+        'notify_oopp_order',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
+        'is_active'          => 'boolean',
+        'notify_oopp_order'  => 'boolean',
     ];
 
     public function permissions()

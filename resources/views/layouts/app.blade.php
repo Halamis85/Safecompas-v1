@@ -69,7 +69,10 @@
         <a class="sidebar-item text-center" href="/admin" aria-label="přesun do administrace">
             <i class="fa-solid fa-id-card me-1"></i> Administrace
         </a>
-        <a class="sidebar-item text-center" href="/lekarnicke" aria-label="přesun do správy lékárniček">
+        <a class="sidebar-item text-center" href="/lekarnicke" aria-label="přesun do lékárniček">
+            <i class="fa-solid fa-kit-medical me-1"></i>Lékárničky
+        </a>
+        <a class="sidebar-item text-center" href="/lekarnicke/administrace" aria-label="přesun do administrace lékárniček">
             <i class="fa-solid fa-kit-medical me-1"></i>Správa lékárniček
         </a>
     </div>

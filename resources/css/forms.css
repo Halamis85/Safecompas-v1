@@ -1,13 +1,3 @@
-/* ==========================================================================
- *  Safecompas — Forms (Restart 2)
- *
- *  Cíl:
- *  - Vyhodit `!important` z form-control / form-select bloku
- *  - Sjednotit focus ring napříč všemi inputy (akcentová barva)
- *  - Form-label, form-text, validace
- *  - Glass-input (uvnitř modálů) reaguje na kontext, ne na vlastní třídu
- * ========================================================================== */
-
 
 /* ==========================================================================
  *  1) Labels
